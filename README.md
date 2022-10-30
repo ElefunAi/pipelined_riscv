@@ -1,2 +1,2 @@
 # pipelined_riscv
-make pipelined 32bit riscV
+make 5 stages pipelined 32bit riscV
