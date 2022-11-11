@@ -56,6 +56,39 @@ reg [4:0] mem_wb_rd_addr;
 //WB
 
 always @(posedge clk) begin
+    // if (reset) begin
+    //     // IF
+    //     if_id_pc <= 0;
+    //     if_id_inst <= 0;
+
+    //     // ID
+    //     id_ex_pc <= 0;
+    //     id_ex_fn <= 0;
+    //     id_ex_rs1_data <= 0;
+    //     id_ex_rs2_data <= 0;
+    //     id_ex_mem_wen <= 0;
+    //     id_ex_wb_sel <= 0;
+    //     id_ex_rf_wen <= 0;
+    //     id_ex_rd_addr <= 0;
+
+    //     // EX
+    //     ex_mem_pc <= 0;
+    //     ex_mem_rs2_data <= 0;
+    //     ex_mem_alu_out <= 0;
+    //     ex_mem_mem_wen <= 0;
+    //     ex_mem_wb_sel <= 0;
+    //     ex_mem_rf_wen <= 0;
+    //     ex_mem_rd_addr <= 0;
+
+    //     // MEM
+    //     mem_wb_pc <= 0;
+    //     mem_wb_alu_out <= 0;
+    //     mem_wb_mem_out <= 0;
+    //     mem_wb_wb_sel <= 0;
+    //     mem_wb_rf_wen <= 0;
+    //     mem_wb_rd_addr <= 0;
+    // end
+
     // IF
     if_id_pc <= pc;
     if_id_inst <= inst;

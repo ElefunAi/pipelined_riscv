@@ -4,11 +4,11 @@ module DECODER (
     input wire [31:0] inst,
     output wire [31:0] imm,
     output wire [4:0] op1_addr, op2_addr, rd_addr,
-    output reg [4:0] fn,
-    output reg mem_wen, rf_wen,
-    output reg [1:0] wb_sel,
-    output reg [1:0] op1,
-    output reg [2:0] op2
+    output wire [4:0] fn,
+    output wire mem_wen, rf_wen,
+    output wire [1:0] wb_sel,
+    output wire [1:0] op1,
+    output wire [2:0] op2
 );
 
 // 内部信号
@@ -33,41 +33,43 @@ assign imm = (opcode == `LUI || opcode == `AUIPC) ? {inst[31:12], 12'd0} : // U-
              (opcode == `BRANCH) ? {{18{inst[31]}},inst[31],inst[7],inst[30:25],inst[11:8],1'd0} : //B-format
              (opcode == `STORE) ? {{20{inst[31]}},inst[31],inst[30:25],inst[11:8],inst[7]} : 32'd0;// ? S-format : R-format(即値なし)
 
-always @(inst) begin
+function [13:0] parse_fn_op1_op2_memwen_rfwen_wbsel;
+    input [31:0] inst;
     casex (inst) 
-        `LW    : begin fn=`ALU_ADD;  op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_MEM; end
-        `SW    : begin fn=`ALU_ADD;  op1=`OP1_RS1; op2=`OP2_IMS; mem_wen=`MEN_S; rf_wen=`REN_X; wb_sel=`WB_X;   end
-        `ADD   : begin fn=`ALU_ADD;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `ADDI  : begin fn=`ALU_ADD;  op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SUB   : begin fn=`ALU_SUB;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `AND   : begin fn=`ALU_AND;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `OR    : begin fn=`ALU_OR;   op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `XOR   : begin fn=`ALU_XOR;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `ANDI  : begin fn=`ALU_AND;  op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `ORI   : begin fn=`ALU_OR;   op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `XORI  : begin fn=`ALU_XOR;  op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SLL   : begin fn=`ALU_SLL;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SRL   : begin fn=`ALU_SRL;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SRA   : begin fn=`ALU_SRA;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SLLI  : begin fn=`ALU_SLL;  op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SRLI  : begin fn=`ALU_SRL;  op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SRAI  : begin fn=`ALU_SRA;  op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SLT   : begin fn=`ALU_SLT;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SLTU  : begin fn=`ALU_SLTU; op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SLTI  : begin fn=`ALU_SLT;  op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `SLTIU : begin fn=`ALU_SLTU; op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `BEQ   : begin fn=`BR_BEQ;   op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_X; wb_sel=`WB_X;   end
-        `BNE   : begin fn=`BR_BNE;   op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_X; wb_sel=`WB_X;   end
-        `BLT   : begin fn=`BR_BLT;   op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_X; wb_sel=`WB_X;   end
-        `BGE   : begin fn=`BR_BGE;   op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_X; wb_sel=`WB_X;   end
-        `BLTU  : begin fn=`BR_BLTU;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_X; wb_sel=`WB_X;   end
-        `BGEU  : begin fn=`BR_BGEU;  op1=`OP1_RS1; op2=`OP2_RS2; mem_wen=`MEN_X; rf_wen=`REN_X; wb_sel=`WB_X;   end
-        `JAL   : begin fn=`ALU_ADD;  op1=`OP1_PC;  op2=`OP2_IMJ; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_PC;  end
-        `JALR  : begin fn=`ALU_JALR; op1=`OP1_RS1; op2=`OP2_IMI; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_PC;  end
-        `LUI   : begin fn=`ALU_ADD;  op1=`OP1_X;   op2=`OP2_IMU; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        `AUIPC : begin fn=`ALU_ADD;  op1=`OP1_PC;  op2=`OP2_IMU; mem_wen=`MEN_X; rf_wen=`REN_S; wb_sel=`WB_ALU; end
-        default: begin fn=`ALU_X;    op1=`OP1_X;   op2=`OP2_X;   mem_wen=`MEN_X; rf_wen=`REN_X; wb_sel=`WB_X  ; $display("hello"); end 
+    `LW    : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_ADD,  `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_MEM};
+    `SW    : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_ADD,  `OP1_RS1, `OP2_IMS, `MEN_S, `REN_X, `WB_X  };
+    `ADD   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_ADD,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `ADDI  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_ADD,  `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_ALU};
+    `SUB   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SUB,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `AND   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_AND,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `OR    : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_OR,   `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `XOR   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_XOR,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `ANDI  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_AND,  `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_ALU};
+    `ORI   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_OR,   `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_ALU};
+    `XORI  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_XOR,  `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_ALU};
+    `SLL   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SLL,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `SRL   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SRL,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `SRA   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SRA,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `SLLI  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SLL,  `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_ALU};
+    `SRLI  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SRL,  `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_ALU};
+    `SRAI  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SRA,  `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_ALU};
+    `SLT   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SLT,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `SLTU  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SLTU, `OP1_RS1, `OP2_RS2, `MEN_X, `REN_S, `WB_ALU};
+    `SLTI  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SLT,  `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_ALU};
+    `SLTIU : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_SLTU, `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_ALU};
+    `BEQ   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`BR_BEQ,   `OP1_RS1, `OP2_RS2, `MEN_X, `REN_X, `WB_X  };
+    `BNE   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`BR_BNE,   `OP1_RS1, `OP2_RS2, `MEN_X, `REN_X, `WB_X  };
+    `BLT   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`BR_BLT,   `OP1_RS1, `OP2_RS2, `MEN_X, `REN_X, `WB_X  };
+    `BGE   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`BR_BGE,   `OP1_RS1, `OP2_RS2, `MEN_X, `REN_X, `WB_X  };
+    `BLTU  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`BR_BLTU,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_X, `WB_X  };
+    `BGEU  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`BR_BGEU,  `OP1_RS1, `OP2_RS2, `MEN_X, `REN_X, `WB_X  };
+    `JAL   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_ADD,  `OP1_PC,  `OP2_IMJ, `MEN_X, `REN_S, `WB_PC };
+    `JALR  : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_JALR, `OP1_RS1, `OP2_IMI, `MEN_X, `REN_S, `WB_PC };
+    `LUI   : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_ADD,  `OP1_X,   `OP2_IMU, `MEN_X, `REN_S, `WB_ALU};
+    `AUIPC : parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_ADD,  `OP1_PC,  `OP2_IMU, `MEN_X, `REN_S, `WB_ALU};
+    default: parse_fn_op1_op2_memwen_rfwen_wbsel = {`ALU_X,    `OP1_X,   `OP2_X,   `MEN_X, `REN_X, `WB_X  }; 
     endcase
-end
+endfunction
 
+assign {fn, op1, op2, mem_wen, rf_wen, wb_sel} = parse_fn_op1_op2_memwen_rfwen_wbsel(inst);
 endmodule

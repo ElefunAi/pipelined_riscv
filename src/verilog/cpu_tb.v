@@ -19,7 +19,7 @@ module cpu_tb;
 
     initial begin
         clk = 0;
-        reset = 1; #5 reset = 0;
+        reset = 1; #10 reset = 0;
     end
 
     initial #100 $finish;
