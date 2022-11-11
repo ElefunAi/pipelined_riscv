@@ -1,4 +1,5 @@
 module sample_test ();
-// build/c_sample.hex
-    
+    initial begin
+        $display(3 == 3);
+    end
 endmodule
