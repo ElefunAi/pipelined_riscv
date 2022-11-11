@@ -41,17 +41,17 @@ module ALU (
     wire [31:0] sltu_out;
     assign sltu_out = (rs1_data < rs2_data) ? 32'b1 : 32'b0;
 
-    assign out = (alu_fn == `ALU_X) ? 32'bx :
-                 (alu_fn == `ALU_ADD) ? add_out :
-                 (alu_fn == `ALU_SUB) ? sub_out :
-                 (alu_fn == `ALU_AND) ? and_out :
-                 (alu_fn == `ALU_OR) ? or_out :
-                 (alu_fn == `ALU_XOR) ? xor_out :
-                 (alu_fn == `ALU_SLL) ? sll_out :
-                 (alu_fn == `ALU_SRL) ? srl_out :
-                 (alu_fn == `ALU_SRA) ? sra_out :
-                 (alu_fn == `ALU_SLT) ? slt_out :
-                 (alu_fn == `ALU_SLTU) ? sltu_out :
+    assign out = (fn == `ALU_X) ? 32'bx :
+                 (fn == `ALU_ADD) ? add_out :
+                 (fn == `ALU_SUB) ? sub_out :
+                 (fn == `ALU_AND) ? and_out :
+                 (fn == `ALU_OR) ? or_out :
+                 (fn == `ALU_XOR) ? xor_out :
+                 (fn == `ALU_SLL) ? sll_out :
+                 (fn == `ALU_SRL) ? srl_out :
+                 (fn == `ALU_SRA) ? sra_out :
+                 (fn == `ALU_SLT) ? slt_out :
+                 (fn == `ALU_SLTU) ? sltu_out :
                  32'bx;
 
 endmodule

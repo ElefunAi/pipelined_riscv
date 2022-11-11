@@ -1,6 +1,6 @@
 default: run
 
-TOPMODULE := sample_test # 状況に応じて要変更
+TOPMODULE := cpu_tb # 状況に応じて要変更
 
 BUILDDIR := build
 $(shell mkdir -p ${BUILDDIR})
@@ -26,6 +26,7 @@ ${CBIN}: ${COBJ}
 	riscv32-unknown-elf-objcopy -O binary ${COBJ} ${CBIN}
 ${COBJ}: ${CSRC}
 	riscv32-unknown-elf-gcc ${CSRC} -c -march=rv32i -mabi=ilp32 -o ${COBJ}
+	riscv32-unknown-elf-gcc ${CSRC} -S -march=rv32i -mabi=ilp32 -o ${BUILDDIR}/c_debug.asm
 
 .PHONY: run
 run: ${OUTFILE}
