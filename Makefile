@@ -13,13 +13,13 @@ CHEX := ${COBJ:%.o=%.hex}
 
 VSRCDIR := ./src/verilog
 VSRCS := ${wildcard ${VSRCDIR}/*.v}
-VTESTBENCH := $(shell grep -Irw ${TOPMODULE} ${VSRCDIR} | cut -d ":" -f 1)
+INSTMEM := ${VSRCDIR}/inst_mem.v
 OUTFILE := ${BUILDDIR}/test.exe
 
 ${OUTFILE}: ${VSRCS}
 	iverilog ${VSRCS} -I ${VSRCDIR} -s ${TOPMODULE} -o ${OUTFILE}
-${VTESTBENCH}: ${CHEX}
-	sed -i -e "s&[a-zA-Z0-9_/]*\.hex&${CHEX}&" ${VTESTBENCH}
+${INSTMEM}: ${CHEX}
+	sed -i -e "s&[^\"]*\.hex&${CHEX}&" ${INSTMEM}
 ${CHEX}: ${CBIN}
 	od -An -tx1 -w1 -v ${CBIN} > ${CHEX}
 ${CBIN}: ${COBJ}
