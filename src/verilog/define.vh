@@ -1,15 +1,15 @@
 // RV32Iのみ(例外処理もなし)
 
 // 命令の識別
-`define LUI     7'b0110111
-`define AUIPC   7'b0010111
-`define JAL     7'b1101111
-`define JALR    7'b1100111
-`define BRANCH  7'b1100011
-`define LW      7'b0000011
-`define STORE   7'b0100011
-`define OPIMI   7'b0010011 //OPERATION IMIDIATE
-`define OPRS2   7'b0110011 //OPERATION RS2
+`define IMM_LUI     7'b0110111
+`define IMM_AUIPC   7'b0010111
+`define IMM_JAL     7'b1101111
+`define IMM_JALR    7'b1100111
+`define IMM_BRANCH  7'b1100011
+`define IMM_LOAD    7'b0000011
+`define IMM_STORE   7'b0100011
+`define IMM_OPIMI   7'b0010011 //OPERATION IMIDIATE
+`define IMM_OPRS2   7'b0110011 //OPERATION RS2
 
 // fn
 `define ALU_X    5'd0
@@ -60,6 +60,7 @@
 `define WB_PC     2'd3
 
 /* 以下命令コード */
+`define NOP    32'b000000000000xxxxx000xxxxx0010011
 // ロード・ストア
 `define LW     32'bxxxxxxxxxxxxxxxxx010xxxxx0000011
 `define SW     32'bxxxxxxxxxxxxxxxxx010xxxxx0100011
