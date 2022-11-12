@@ -63,61 +63,41 @@ reg mem_wb_nop_flag;
 //WB
 
 always @(posedge clk) begin
-    // if (reset) begin
-    //     // IF
-    //     if_id_pc <= 0;
-    //     if_id_inst <= 0;
-
-    //     // ID
-    //     id_ex_pc <= 0;
-    //     id_ex_fn <= 0;
-    //     id_ex_rs1_data <= 0;
-    //     id_ex_rs2_data <= 0;
-    //     id_ex_mem_wen <= 0;
-    //     id_ex_wb_sel <= 0;
-    //     id_ex_rf_wen <= 0;
-    //     id_ex_rd_addr <= 0;
-
-    //     // EX
-    //     ex_mem_pc <= 0;
-    //     ex_mem_rs2_data <= 0;
-    //     ex_mem_alu_out <= 0;
-    //     ex_mem_mem_wen <= 0;
-    //     ex_mem_wb_sel <= 0;
-    //     ex_mem_rf_wen <= 0;
-    //     ex_mem_rd_addr <= 0;
-
-    //     // MEM
-    //     mem_wb_pc <= 0;
-    //     mem_wb_alu_out <= 0;
-    //     mem_wb_mem_out <= 0;
-    //     mem_wb_wb_sel <= 0;
-    //     mem_wb_rf_wen <= 0;
-    //     mem_wb_rd_addr <= 0;
-    // end
-
     // IF
-    if_id_pc <= pc;
-    if (have_data_hazard) begin
-        if_id_inst <= 32'b00000000000000000000000000010011; // NOP
-    end
-    else begin 
+    if (!have_data_hazard) begin
+        if_id_pc <= pc;
         if_id_inst <= inst;
+    end
+    else begin
+        if_id_pc <= if_id_pc;
+        if_id_inst <= if_id_inst;
     end
 
     // ID
-    id_ex_pc <= if_id_pc;
-    id_ex_fn <= fn;
-    id_ex_rs1 <= rs1;
-    id_ex_rs1_data <= rs1_data;
-    id_ex_rs2 <= rs2;
-    id_ex_rs2_data <= rs2_data;
-    id_ex_imm <= imm;
-    id_ex_mem_wen <= mem_wen;
-    id_ex_wb_sel <= wb_sel;
-    id_ex_rf_wen <= rf_wen;
-    id_ex_rd_addr <= rd_addr;
-    id_ex_nop_flag <= nop_flag;
+        id_ex_pc <= if_id_pc;
+        id_ex_rs1 <= rs1;
+        id_ex_rs1_data <= rs1_data;
+        id_ex_rs2 <= rs2;
+        id_ex_rs2_data <= rs2_data;
+        id_ex_rd_addr <= rd_addr;
+    if (!have_data_hazard) begin
+        id_ex_fn <= fn;
+        id_ex_imm <= imm;
+        id_ex_mem_wen <= mem_wen;
+        id_ex_wb_sel <= wb_sel;
+        id_ex_rf_wen <= rf_wen;
+        id_ex_nop_flag <= nop_flag;
+    end
+    else begin
+        id_ex_fn <= `ALU_X;
+        id_ex_imm <= 32'b0;
+        id_ex_mem_wen <= `MEN_X;
+        id_ex_wb_sel <= `WB_X;
+        id_ex_rf_wen <= `REN_X;
+        id_ex_nop_flag <= 1'b1;
+    end 
+    
+    
 
     // EX
     ex_mem_pc <= id_ex_pc;
