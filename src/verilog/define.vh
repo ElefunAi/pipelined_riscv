@@ -31,18 +31,18 @@
 `define BR_BGEU  5'd16
 `define ALU_JALR 5'd17
 
-// op1
-`define OP1_X    2'd0
-`define OP1_RS1  2'd1
-`define OP1_PC   2'd2
+// rs1
+`define RS1_X    2'd0
+`define RS1_RS1  2'd1
+`define RS1_PC   2'd2
 
-// op2
-`define OP2_X    3'd0
-`define OP2_RS2  3'd1
-`define OP2_IMI  3'd2
-`define OP2_IMS  3'd3
-`define OP2_IMJ  3'd4
-`define OP2_IMU  3'd5
+// rs2
+`define RS2_X    3'd0
+`define RS2_RS2  3'd1
+`define RS2_IMI  3'd2
+`define RS2_IMS  3'd3
+`define RS2_IMJ  3'd4
+`define RS2_IMU  3'd5
 
 // mem_wen
 `define MEN_X   1'd0

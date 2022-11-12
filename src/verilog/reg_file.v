@@ -8,8 +8,8 @@ module REG_FILE (
     input wire [4:0] write_addr,
     input wire [31:0] write_value,
 
-    input wire [4:0] op1_addr, op2_addr,
-    output wire [31:0] op1_data, op2_data
+    input wire [4:0] rs1_addr, rs2_addr,
+    output wire [31:0] rs1_data, rs2_data
 );
 
     reg [31:0] reg_file [0:31];
@@ -54,7 +54,7 @@ module REG_FILE (
         end
     end
 
-    assign op1_data = reg_file[op1_addr];
-    assign op2_data = reg_file[op2_addr];
+    assign rs1_data = reg_file[rs1_addr];
+    assign rs2_data = reg_file[rs2_addr];
 
 endmodule

@@ -2,44 +2,44 @@
 
 module ALU (
     input wire [4:0] fn,
-    input wire [31:0] rs1_data,
-    input wire [31:0] rs2_data,
+    input wire [31:0] src1,
+    input wire [31:0] src2,
     output wire [31:0] out
 );
 
     // 算術演算
     wire [31:0] add_out;
-    assign add_out = rs1_data+rs2_data;
+    assign add_out = src1 + src2;
 
     wire [31:0] sub_out;
-    assign sub_out = rs1_data-rs2_data;
+    assign sub_out = src1 - src2;
     
     // 論理演算
     wire [31:0] and_out;
-    assign and_out = rs1_data & rs2_data;
+    assign and_out = src1 & src2;
 
     wire [31:0] or_out;
-    assign or_out = rs1_data | rs2_data;
+    assign or_out = src1 | src2;
 
     wire [31:0] xor_out;
-    assign xor_out = rs1_data ^ rs2_data;
+    assign xor_out = src1 ^ src2;
 
     // シフト
     wire [31:0] sll_out;
-    assign sll_out = rs1_data << rs2_data;
+    assign sll_out = src1 << src2;
 
     wire [31:0] srl_out;
-    assign srl_out = rs1_data >> rs2_data;
+    assign srl_out = src1 >> src2;
 
     wire [31:0] sra_out;
-    assign sra_out = rs1_data >>> rs2_data;
+    assign sra_out = src1 >>> src2;
 
     // 比較
     wire [31:0] slt_out;
-    assign slt_out = ($signed(rs1_data) < $signed(rs2_data)) ? 32'b1 : 32'b0;
+    assign slt_out = ($signed(src1) < $signed(src2)) ? 32'b1 : 32'b0;
 
     wire [31:0] sltu_out;
-    assign sltu_out = (rs1_data < rs2_data) ? 32'b1 : 32'b0;
+    assign sltu_out = (src1 < src2) ? 32'b1 : 32'b0;
 
     assign out = (fn == `ALU_X) ? 32'bx :
                  (fn == `ALU_ADD) ? add_out :

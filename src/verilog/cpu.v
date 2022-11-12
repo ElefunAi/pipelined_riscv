@@ -6,13 +6,13 @@ module CPU (
 // todo: rs2_dataの取り扱い
 
 wire [31:0] alu_out;
-wire [31:0] op1_data, op2_data;
+wire [31:0] rs1_data, rs2_data;
 wire [31:0] pc;
 
-wire [1:0] op1;
-wire [2:0] op2;
+wire [1:0] rs1;
+wire [2:0] rs2;
 wire [31:0] imm;
-wire [4:0] op1_addr, op2_addr, rd_addr;
+wire [4:0] rs1_addr, rs2_addr, rd_addr;
 wire [4:0] fn;
 wire mem_wen, rf_wen;
 wire [1:0] wb_sel;
@@ -30,8 +30,11 @@ reg [31:0] if_id_inst;
 // ID
 reg [31:0] id_ex_pc;
 reg [4:0] id_ex_fn;
+reg [1:0] id_ex_rs1;
 reg [31:0] id_ex_rs1_data;
+reg [2:0] id_ex_rs2;
 reg [31:0] id_ex_rs2_data;
+reg [31:0] id_ex_imm;
 reg id_ex_mem_wen;
 reg [1:0] id_ex_wb_sel;
 reg id_ex_rf_wen;
@@ -50,6 +53,7 @@ reg ex_mem_nop_flag;
 
 // MEM
 reg [31:0] mem_wb_pc;
+reg [31:0] mem_wb_rs2_data;
 reg [31:0] mem_wb_alu_out;
 reg [31:0] mem_wb_mem_out;
 reg [1:0] mem_wb_wb_sel;
@@ -104,8 +108,11 @@ always @(posedge clk) begin
     // ID
     id_ex_pc <= if_id_pc;
     id_ex_fn <= fn;
+    id_ex_rs1 <= rs1;
     id_ex_rs1_data <= rs1_data;
+    id_ex_rs2 <= rs2;
     id_ex_rs2_data <= rs2_data;
+    id_ex_imm <= imm;
     id_ex_mem_wen <= mem_wen;
     id_ex_wb_sel <= wb_sel;
     id_ex_rf_wen <= rf_wen;
@@ -132,19 +139,21 @@ always @(posedge clk) begin
     mem_wb_nop_flag <= ex_mem_nop_flag;
 end
 
-wire [31:0] rs1_data;
-assign rs1_data = (op1 == `OP1_X)   ? 32'b0    :
-                  (op1 == `OP1_RS1) ? op1_data :
-                  (op1 == `OP1_PC)  ? if_id_pc : 32'bx;
+wire [31:0] alu_src1;
+assign alu_src1 = (id_ex_rs1 == `RS1_X)   ? 32'b0          :
+                  (id_ex_rs1 == `RS1_RS1) ? id_ex_rs1_data :
+                  (id_ex_rs1 == `RS1_PC)  ? id_ex_pc       : 32'bx;
 
-wire [31:0] rs2_data;
-assign rs2_data = (op2 == `OP2_X)   ? 32'b0    :
-                  (op2 == `OP2_RS2) ? op2_data :
-                  (op2 == `OP2_IMI) ||
-                  (op2 == `OP2_IMS) ||
-                  (op2 == `OP2_IMJ) ||
-                  (op2 == `OP2_IMU) ? imm      : 32'bx;
+wire [31:0] alu_src2;
+assign alu_src2 = (id_ex_rs2 == `RS2_X)   ? 32'b0          :
+                  (id_ex_rs2 == `RS2_RS2) ? id_ex_rs2_data :
+                  (id_ex_rs2 == `RS2_IMI) ||
+                  (id_ex_rs2 == `RS2_IMS) ||
+                  (id_ex_rs2 == `RS2_IMJ) ||
+                  (id_ex_rs2 == `RS2_IMU) ? id_ex_imm       : 32'bx;
                
+wire [31:0] mem_write_value;
+assign mem_write_value = (ex_mem_mem_wen) ? ex_mem_rs2_data : ex_mem_rs2_data;
 
 wire [31:0] rf_write_value;
 assign rf_write_value = (mem_wb_wb_sel == `WB_ALU) ? mem_wb_alu_out :
@@ -153,9 +162,9 @@ assign rf_write_value = (mem_wb_wb_sel == `WB_ALU) ? mem_wb_alu_out :
 
 // 制御
 wire have_data_hazard;
-assign have_data_hazard = ((id_ex_rf_wen  && (id_ex_rd_addr == rd_addr))  && !id_ex_nop_flag)  ||
-                          ((ex_mem_rf_wen && (ex_mem_rd_addr == rd_addr)) && !ex_mem_nop_flag) ||
-                          ((mem_wb_rf_wen && (mem_wb_rd_addr == rd_addr)) && !mem_wb_nop_flag)  ? 1'b1 : 1'b0;
+assign have_data_hazard = ((id_ex_rf_wen  && (id_ex_rd_addr == rs1_addr  || id_ex_rd_addr == rs2_addr))  && !id_ex_nop_flag)  ||
+                          ((ex_mem_rf_wen && (ex_mem_rd_addr == rs1_addr || ex_mem_rd_addr == rs2_addr)) && !ex_mem_nop_flag) ||
+                          ((mem_wb_rf_wen && (mem_wb_rd_addr == rs1_addr || mem_wb_rd_addr == rs2_addr)) && !mem_wb_nop_flag)  ? 1'b1 : 1'b0;
 
 PC pc_mod (
     .clk(clk), // input
@@ -169,15 +178,15 @@ PC pc_mod (
 DECODER decoder (
     .inst(if_id_inst), // input
     .imm(imm), // output
-    .op1_addr(op1_addr), // output
-    .op2_addr(op2_addr), // output
+    .rs1_addr(rs1_addr), // output
+    .rs2_addr(rs2_addr), // output
     .rd_addr(rd_addr), // output
     .fn(fn), // output
     .mem_wen(mem_wen), // output
     .rf_wen(rf_wen), // output
     .wb_sel(wb_sel), // output
-    .op1(op1), // output 
-    .op2(op2), // output
+    .rs1(rs1), // output 
+    .rs2(rs2), // output
     .nop_flag(nop_flag) // output
 );
 
@@ -187,10 +196,10 @@ REG_FILE reg_file (
     .write_en(mem_wb_rf_wen), // input
     .write_addr(mem_wb_rd_addr), // input
     .write_value(rf_write_value), // input
-    .op1_addr(op1_addr), // input
-    .op2_addr(op2_addr), // input
-    .op1_data(op1_data), // output
-    .op2_data(op2_data) // output
+    .rs1_addr(rs1_addr), // input
+    .rs2_addr(rs2_addr), // input
+    .rs1_data(rs1_data), // output
+    .rs2_data(rs2_data) // output
 );
 
 JUMP_CONTROLLER jump_controller (
@@ -203,8 +212,8 @@ JUMP_CONTROLLER jump_controller (
 
 ALU alu (
     .fn(id_ex_fn), // input
-    .rs1_data(id_ex_rs1_data), // input
-    .rs2_data(id_ex_rs2_data), // input
+    .src1(alu_src1), // input
+    .src2(alu_src2), // input
     .out(alu_out) // output
 );
 
