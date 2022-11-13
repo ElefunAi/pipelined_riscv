@@ -61,7 +61,7 @@ reg [4:0] mem_wb_rd_addr;
 
 always @(posedge clk) begin
     // IF
-    if (!have_data_hazard) begin
+    if (!(have_data_hazard || have_branch_stall)) begin
         if_id_pc <= pc;
         if_id_inst <= inst;
     end
@@ -77,7 +77,7 @@ always @(posedge clk) begin
         id_ex_rs2 <= rs2;
         id_ex_rs2_data <= rs2_data;
         id_ex_rd_addr <= rd_addr;
-    if (!have_data_hazard) begin
+    if (!(have_data_hazard || have_branch_stall)) begin
         id_ex_fn <= fn;
         id_ex_imm <= imm;
         id_ex_mem_wen <= mem_wen;
@@ -136,11 +136,19 @@ wire have_data_hazard;
 assign have_data_hazard = ((id_ex_rf_wen  && (id_ex_rd_addr == rs1_addr  || id_ex_rd_addr == rs2_addr)))  ||
                           ((ex_mem_rf_wen && (ex_mem_rd_addr == rs1_addr || ex_mem_rd_addr == rs2_addr))) ||
                           ((mem_wb_rf_wen && (mem_wb_rd_addr == rs1_addr || mem_wb_rd_addr == rs2_addr)))  ? 1'b1 : 1'b0;
+wire have_branch_stall;
+assign have_branch_stall = (id_ex_fn == `BR_BEQ) || 
+                           (id_ex_fn == `BR_BNE) || 
+                           (id_ex_fn == `BR_BLT) || 
+                           (id_ex_fn == `BR_BGE) || 
+                           (id_ex_fn == `BR_BLTU) ||
+                           (id_ex_fn == `BR_BGEU) || 
+                           (id_ex_fn == `ALU_JALR) ? 1'b1 : 1'b0;
 
 PC pc_mod (
     .clk(clk), // input
     .reset(reset), // input
-    .stall(have_data_hazard), // input
+    .stall(have_data_hazard || have_branch_stall), // input
     .jump_flag(jump_flag), // input
     .jump_target(jump_target), // input
     .pc(pc) // output
@@ -176,6 +184,8 @@ JUMP_CONTROLLER jump_controller (
     .fn(id_ex_fn), // input
     .rs1_data(id_ex_rs1_data), // input
     .rs2_data(id_ex_rs2_data), // input
+    .imm(id_ex_imm), // input
+    .pc(id_ex_pc), // input
     .jump_flag(jump_flag), // output
     .jump_target(jump_target) // output
 );

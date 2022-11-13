@@ -4,6 +4,8 @@ module JUMP_CONTROLLER (
     input wire [4:0] fn,
     input wire [31:0] rs1_data,
     input wire [31:0] rs2_data,
+    input wire [31:0] imm,
+    input wire [31:0] pc,
     output wire jump_flag,
     output wire [31:0] jump_target
 );
@@ -37,6 +39,6 @@ module JUMP_CONTROLLER (
                        (fn == `BR_BLTU) ? active_bltu :
                        (fn == `BR_BGEU) ? active_bgeu :
                        (fn == `ALU_JALR) ? 1'b1 : 1'b0;
-    assign jump_target = (fn == `ALU_JALR) ? jalr_target : rs2_data;
+    assign jump_target = (fn == `ALU_JALR) ? jalr_target : pc + imm;
 
 endmodule
