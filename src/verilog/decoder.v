@@ -2,11 +2,11 @@
 module decoder (
     input wire [31:0] inst,
     output wire [31:0] imm,
-    output wire [4:0] op1_addr, op2_addr, rd_addr,
+    output wire [4:0] rs1_addr, rs2_addr, rd_addr,
     output reg [4:0] exe_fun,
     output reg mem_wen, rf_wen,
-    output reg [1:0] op1, wb_sel,
-    output reg [2:0] op2
+    output reg [1:0] rs1, wb_sel,
+    output reg [2:0] rs2
 );
     // 宣言
     // 内部信号
@@ -29,13 +29,13 @@ module decoder (
     assign rs2 = inst[24:20];
 
     // デコーダが渡すもの
-    // exe_fun(演算内容),op1(第1オペランド),op2(第2オペランド),mem_wen(メモリenable),
+    // exe_fun(演算内容),rs1(第1オペランド),rs2(第2オペランド),mem_wen(メモリenable),
     // rf_wen(ライトバックenable),wb_sel(ライトバックデータセレクタ)
     // wb_selで例えばWB_ALUは、ALUの出力をレジスタへ書き戻すことを表す
     // つまり、reg_fileにとってはWB_ALU & rf_wen(Write ENable)がenable信号
-    // reg_fileに対して=>32bit op1_addr, op2_addr, rd_addr, imm(即値)
-    assign op1_addr = inst[19:15];
-    assign op2_addr = inst[24:20];
+    // reg_fileに対して=>32bit rs1_addr, rs2_addr, rd_addr, imm(即値)
+    assign rs1_addr = inst[19:15];
+    assign rs2_addr = inst[24:20];
     assign rd_addr = inst[11:7];
     // 即値の扱い方 risc-v ISA manual参照(P.24)
     assign imm = (opcode == `LUI || opcode == `AUIPC) ? {inst[31:12], 12'd0} : // U-format
@@ -48,32 +48,32 @@ module decoder (
         case (opcode)
             `LUI : begin
                 exe_fun = `ALU_ADD;
-                op1 = `OP1_X;
-                op2 = `OP2_IMU; 
+                rs1 = `RS1_X;
+                rs2 = `RS2_IMU; 
                 mem_wen = `MEN_X;
                 rf_wen = `REN_S;
                 wb_sel = `WB_ALU;
             end
             `AUIPC : begin
                 exe_fun = `ALU_ADD;
-                op1 = `OP1_PC;
-                op2 = `OP2_IMU;
+                rs1 = `RS1_PC;
+                rs2 = `RS2_IMU;
                 mem_wen = `MEN_X;
                 rf_wen = `REN_S;
                 wb_sel = `WB_ALU;                
             end
             `JAL : begin
                 exe_fun = `ALU_ADD;
-                op1 = `OP1_PC;
-                op2 = `OP2_IMJ; 
+                rs1 = `RS1_PC;
+                rs2 = `RS2_IMJ; 
                 mem_wen = `MEN_X;
                 rf_wen = `REN_S;
                 wb_sel = `WB_PC;                
             end
             `JALR : begin
                 exe_fun = `ALU_JALR;
-                op1 = `OP1_RS1;
-                op2 = `OP2_IMI; 
+                rs1 = `RS1_RS1;
+                rs2 = `RS2_IMI; 
                 mem_wen = `MEN_X;
                 rf_wen = `REN_S;
                 wb_sel = `WB_PC;                
@@ -82,56 +82,56 @@ module decoder (
                 case (funct3)
                     3'b000 : begin  //BEQ
                         exe_fun = `BR_BEQ;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_X;
                         wb_sel = `WB_X;                        
                     end
                     3'b001 : begin  //BNE
                         exe_fun = `BR_BNE;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_X;
                         wb_sel = `WB_X;                        
                     end
                     3'b100 : begin  //BLT
                         exe_fun = `BR_BLT;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_X;
                         wb_sel = `WB_X;                        
                     end
                     3'b101 : begin  //BGE
                         exe_fun = `BR_BGE;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_X;
                         wb_sel = `WB_X;                        
                     end
                     3'b110 : begin  //BLTU
                         exe_fun = `BR_BLTU;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_X;
                         wb_sel = `WB_X;                        
                     end
                     3'b111 : begin  //BGEU
                         exe_fun = `BR_BGEU;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_X;
                         wb_sel = `WB_X;                        
                     end
                     default: begin //NOP=>_Xで統一
                         exe_fun = `ALU_X;
-                        op1 = `OP1_X;
-                        op2 = `OP2_X;
+                        rs1 = `RS1_X;
+                        rs2 = `RS2_X;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_X;
                         wb_sel = `WB_X;
@@ -140,16 +140,16 @@ module decoder (
             end
             `LW : begin
                 exe_fun = `ALU_ADD;
-                op1 = `OP1_RS1;
-                op2 = `OP2_IMI; 
+                rs1 = `RS1_RS1;
+                rs2 = `RS2_IMI; 
                 mem_wen = `MEN_X;
                 rf_wen = `REN_S;
                 wb_sel = `WB_MEM;                
             end
             `STORE : begin
                 exe_fun = `ALU_ADD;
-                op1 = `OP1_RS1;
-                op2 = `OP2_IMS; 
+                rs1 = `RS1_RS1;
+                rs2 = `RS2_IMS; 
                 mem_wen = `MEN_S;
                 rf_wen = `REN_X;
                 wb_sel = `WB_X;                
@@ -158,40 +158,40 @@ module decoder (
                 case (funct3)
                     3'b000 : begin  //ADDI
                         exe_fun = `ALU_ADD;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_IMI;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_IMI;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     3'b001 : begin  //SLLI
                         exe_fun = `ALU_SLL;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_IMI;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_IMI;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     3'b010 : begin  //SLTI
                         exe_fun = `ALU_SLT;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_IMI;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_IMI;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     3'b011 : begin  //SLTIU
                         exe_fun = `ALU_SLTU;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_IMI;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_IMI;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                             
                     end
                     3'b100 : begin  //XORI
                         exe_fun = `ALU_XOR;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_IMI;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_IMI;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
@@ -200,24 +200,24 @@ module decoder (
                         case (funct7)
                             7'b0000000 : begin  //SRLI
                                 exe_fun = `ALU_SRL;
-                                op1 = `OP1_RS1;
-                                op2 = `OP2_IMI;
+                                rs1 = `RS1_RS1;
+                                rs2 = `RS2_IMI;
                                 mem_wen = `MEN_X;
                                 rf_wen = `REN_S;
                                 wb_sel = `WB_ALU;                                
                             end
                             7'b0100000 : begin  //SRAI
                                 exe_fun = `ALU_SRA;
-                                op1 = `OP1_RS1;
-                                op2 = `OP2_IMI;
+                                rs1 = `RS1_RS1;
+                                rs2 = `RS2_IMI;
                                 mem_wen = `MEN_X;
                                 rf_wen = `REN_S;
                                 wb_sel = `WB_ALU;                                
                             end
                             default: begin //NOP=>_Xで統一
                                 exe_fun = `ALU_X;
-                                op1 = `OP1_X;
-                                op2 = `OP2_X;
+                                rs1 = `RS1_X;
+                                rs2 = `RS2_X;
                                 mem_wen = `MEN_X;
                                 rf_wen = `REN_X;
                                 wb_sel = `WB_X;
@@ -226,24 +226,24 @@ module decoder (
                     end
                     3'b110 : begin  //ORI
                         exe_fun = `ALU_OR;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_IMI;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_IMI;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     3'b111 : begin  //ANDI
                         exe_fun = `ALU_AND;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_IMI;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_IMI;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     default: begin //NOP=>_Xで統一 
                         exe_fun = `ALU_X;
-                        op1 = `OP1_X;
-                        op2 = `OP2_X;
+                        rs1 = `RS1_X;
+                        rs2 = `RS2_X;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_X;
                         wb_sel = `WB_X;
@@ -256,24 +256,24 @@ module decoder (
                         case (funct7)
                             7'b0000000 :  begin  //ADD
                                 exe_fun = `ALU_ADD;
-                                op1 = `OP1_RS1;
-                                op2 = `OP2_RS2;
+                                rs1 = `RS1_RS1;
+                                rs2 = `RS2_RS2;
                                 mem_wen = `MEN_X;
                                 rf_wen = `REN_S;
                                 wb_sel = `WB_ALU;
                             end
                             7'b0100000 :  begin  //SUB
                                 exe_fun = `ALU_SUB;
-                                op1 = `OP1_RS1;
-                                op2 = `OP2_RS2;
+                                rs1 = `RS1_RS1;
+                                rs2 = `RS2_RS2;
                                 mem_wen = `MEN_X;
                                 rf_wen = `REN_S;
                                 wb_sel = `WB_ALU;
                             end
                             default: begin //NOP=>_Xで統一 
                                 exe_fun = `ALU_X;
-                                op1 = `OP1_X;
-                                op2 = `OP2_X;
+                                rs1 = `RS1_X;
+                                rs2 = `RS2_X;
                                 mem_wen = `MEN_X;
                                 rf_wen = `REN_X;
                                 wb_sel = `WB_X;
@@ -282,32 +282,32 @@ module decoder (
                     end
                     3'b001 : begin  //SLL
                         exe_fun = `ALU_SLL;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     3'b010 : begin  //SLT
                         exe_fun = `ALU_SLT;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     3'b011 : begin  //SLTU
                         exe_fun = `ALU_SLTU;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     3'b100 : begin  //XOR
                         exe_fun = `ALU_XOR;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
@@ -316,24 +316,24 @@ module decoder (
                         case (funct7)
                             7'b0000000 :  begin  //SRL
                                 exe_fun = `ALU_SRL;
-                                op1 = `OP1_RS1;
-                                op2 = `OP2_RS2;
+                                rs1 = `RS1_RS1;
+                                rs2 = `RS2_RS2;
                                 mem_wen = `MEN_X;
                                 rf_wen = `REN_S;
                                 wb_sel = `WB_ALU; 
                             end
                             7'b0100000 :  begin  //SRA
                                 exe_fun = `ALU_SRA;
-                                op1 = `OP1_RS1;
-                                op2 = `OP2_RS2;
+                                rs1 = `RS1_RS1;
+                                rs2 = `RS2_RS2;
                                 mem_wen = `MEN_X;
                                 rf_wen = `REN_S;
                                 wb_sel = `WB_ALU; 
                             end
                             default: begin //NOP=>_Xで統一
                                 exe_fun = `ALU_X;
-                                op1 = `OP1_X;
-                                op2 = `OP2_X;
+                                rs1 = `RS1_X;
+                                rs2 = `RS2_X;
                                 mem_wen = `MEN_X;
                                 rf_wen = `REN_X;
                                 wb_sel = `WB_X;
@@ -342,24 +342,24 @@ module decoder (
                     end
                     3'b110 : begin  //OR
                         exe_fun = `ALU_OR;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     3'b111 : begin  //AND
                         exe_fun = `ALU_AND;
-                        op1 = `OP1_RS1;
-                        op2 = `OP2_RS2;
+                        rs1 = `RS1_RS1;
+                        rs2 = `RS2_RS2;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_S;
                         wb_sel = `WB_ALU;                        
                     end
                     default: begin //NOP=>_Xで統一 
                         exe_fun = `ALU_X;
-                        op1 = `OP1_X;
-                        op2 = `OP2_X;
+                        rs1 = `RS1_X;
+                        rs2 = `RS2_X;
                         mem_wen = `MEN_X;
                         rf_wen = `REN_X;
                         wb_sel = `WB_X;
@@ -368,8 +368,8 @@ module decoder (
             end
             default: begin //NOP=>_Xで統一 
                 exe_fun = `ALU_X;
-                op1 = `OP1_X;
-                op2 = `OP2_X;
+                rs1 = `RS1_X;
+                rs2 = `RS2_X;
                 mem_wen = `MEN_X;
                 rf_wen = `REN_X;
                 wb_sel = `WB_X;

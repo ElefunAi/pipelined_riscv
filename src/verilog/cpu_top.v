@@ -8,21 +8,17 @@ module CPU(
 
 wire jump_flag;
 wire [31:0] jump_target;
-wire [31:0] pc;
-reg [31:0] pc_buf;
 
-wire [4:0] fn;
-wire [31:0] rs1_data;
-wire [31:0] rs2_data;
 wire [31:0] alu_out;
+wire [31:0] rs1_data, rs2_data;
+wire [31:0] pc;
 
-wire [4:0] op1_addr, op2_addr;
-reg  [4:0] op1_addr_buf, op2_addr_buf;
+wire [1:0] rs1;
+wire [2:0] rs2;
 wire [31:0] inst_out;
-reg  [31:0] inst_out_buf;
 wire [31:0] imm;
-wire [1:0] op1;
-wire [2:0] op2;
+wire [4:0] rs1_addr, rs2_addr;
+wire [4:0] fn;
 wire [1:0] wb_sel;
 reg  [1:0] wb_sel_buf;
 wire reg_write_en;
@@ -46,12 +42,15 @@ always @(posedge clk) begin
     reg_write_addr_buf <= reg_write_addr;
     write_data_buf <= rs2_data;
     mem_write_en_buf <= mem_write_en;
-    inst_out_buf <= inst_out;
     pc_buf <= pc;
     op1_addr_buf <= op1_addr;
     op2_addr_buf <= op1_addr;
 end
-    
+
+//====================================================================
+// Instruction fetch stage
+//====================================================================
+
 PC PC (
     .clk(clk),
     .reset(reset),
@@ -59,6 +58,20 @@ PC PC (
     .jump_target(jump_target),
     .pc(pc)
 );
+
+// pipeline register
+    always @(posedge clk or negedge rst_n) begin
+        if(!rst_n) begin
+            ex_PC <= 32'd0;
+        end else begin
+            ex_PC <= imem_addr;
+        end
+    end
+
+
+//====================================================================
+// Instruction decode stage
+//====================================================================
 
 decoder decoder(
     .inst(inst_out),
