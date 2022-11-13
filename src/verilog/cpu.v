@@ -2,8 +2,8 @@ module CPU (
     input wire clk, reset
 );
 
-// todo: 制御とパイプライン実装
-// todo: rs2_dataの取り扱い
+// todo: ifによるストール実装
+// フォワーディング
 
 wire [31:0] alu_out;
 wire [31:0] rs1_data, rs2_data;
@@ -39,7 +39,6 @@ reg id_ex_mem_wen;
 reg [1:0] id_ex_wb_sel;
 reg id_ex_rf_wen;
 reg [4:0] id_ex_rd_addr;
-reg id_ex_nop_flag;
 
 // EX
 reg [31:0] ex_mem_pc;
@@ -49,7 +48,6 @@ reg ex_mem_mem_wen;
 reg [1:0] ex_mem_wb_sel;
 reg ex_mem_rf_wen;
 reg [4:0] ex_mem_rd_addr;
-reg ex_mem_nop_flag;
 
 // MEM
 reg [31:0] mem_wb_pc;
@@ -59,7 +57,6 @@ reg [31:0] mem_wb_mem_out;
 reg [1:0] mem_wb_wb_sel;
 reg mem_wb_rf_wen;
 reg [4:0] mem_wb_rd_addr;
-reg mem_wb_nop_flag;
 //WB
 
 always @(posedge clk) begin
@@ -86,7 +83,6 @@ always @(posedge clk) begin
         id_ex_mem_wen <= mem_wen;
         id_ex_wb_sel <= wb_sel;
         id_ex_rf_wen <= rf_wen;
-        id_ex_nop_flag <= nop_flag;
     end
     else begin
         id_ex_fn <= `ALU_X;
@@ -94,10 +90,7 @@ always @(posedge clk) begin
         id_ex_mem_wen <= `MEN_X;
         id_ex_wb_sel <= `WB_X;
         id_ex_rf_wen <= `REN_X;
-        id_ex_nop_flag <= 1'b1;
     end 
-    
-    
 
     // EX
     ex_mem_pc <= id_ex_pc;
@@ -107,7 +100,6 @@ always @(posedge clk) begin
     ex_mem_wb_sel <= id_ex_wb_sel;
     ex_mem_rf_wen <= id_ex_rf_wen;
     ex_mem_rd_addr <= id_ex_rd_addr;
-    ex_mem_nop_flag <= id_ex_nop_flag;
 
     // MEM
     mem_wb_pc <= ex_mem_pc;
@@ -116,7 +108,6 @@ always @(posedge clk) begin
     mem_wb_wb_sel <= ex_mem_wb_sel;
     mem_wb_rf_wen <= ex_mem_rf_wen;
     mem_wb_rd_addr <= ex_mem_rd_addr;
-    mem_wb_nop_flag <= ex_mem_nop_flag;
 end
 
 wire [31:0] alu_src1;
@@ -142,9 +133,9 @@ assign rf_write_value = (mem_wb_wb_sel == `WB_ALU) ? mem_wb_alu_out :
 
 // 制御
 wire have_data_hazard;
-assign have_data_hazard = ((id_ex_rf_wen  && (id_ex_rd_addr == rs1_addr  || id_ex_rd_addr == rs2_addr))  && !id_ex_nop_flag)  ||
-                          ((ex_mem_rf_wen && (ex_mem_rd_addr == rs1_addr || ex_mem_rd_addr == rs2_addr)) && !ex_mem_nop_flag) ||
-                          ((mem_wb_rf_wen && (mem_wb_rd_addr == rs1_addr || mem_wb_rd_addr == rs2_addr)) && !mem_wb_nop_flag)  ? 1'b1 : 1'b0;
+assign have_data_hazard = ((id_ex_rf_wen  && (id_ex_rd_addr == rs1_addr  || id_ex_rd_addr == rs2_addr)))  ||
+                          ((ex_mem_rf_wen && (ex_mem_rd_addr == rs1_addr || ex_mem_rd_addr == rs2_addr))) ||
+                          ((mem_wb_rf_wen && (mem_wb_rd_addr == rs1_addr || mem_wb_rd_addr == rs2_addr)))  ? 1'b1 : 1'b0;
 
 PC pc_mod (
     .clk(clk), // input
@@ -166,8 +157,7 @@ DECODER decoder (
     .rf_wen(rf_wen), // output
     .wb_sel(wb_sel), // output
     .rs1(rs1), // output 
-    .rs2(rs2), // output
-    .nop_flag(nop_flag) // output
+    .rs2(rs2) // output
 );
 
 REG_FILE reg_file (

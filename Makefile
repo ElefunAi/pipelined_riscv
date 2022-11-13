@@ -21,8 +21,7 @@ ${OUTFILE}: ${VSRCS}
 ${INSTMEM}: ${CHEX}
 	sed -i -e "s&[^\"]*\.hex&${CHEX}&" ${INSTMEM}
 ${CHEX}: ${CBIN}
-	echo '13\n00\n00\n00' > ${CHEX} # NOP命令から始まるように
-	od -An -tx1 -w1 -v ${CBIN} >> ${CHEX}
+	od -An -tx1 -w1 -v ${CBIN} > ${CHEX}
 ${CBIN}: ${COBJ}
 	riscv32-unknown-elf-objcopy -O binary ${COBJ} ${CBIN}
 ${COBJ}: ${CSRC}
