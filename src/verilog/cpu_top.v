@@ -48,7 +48,7 @@ always @(posedge clk) begin
 end
 
 //====================================================================
-// Instruction fetch stage
+// Instruction Fetch Stage
 //====================================================================
 
 PC PC (
@@ -60,17 +60,13 @@ PC PC (
 );
 
 // pipeline register
-    always @(posedge clk or negedge rst_n) begin
-        if(!rst_n) begin
-            ex_PC <= 32'd0;
-        end else begin
-            ex_PC <= imem_addr;
-        end
+    always @(posedge clk or posedge reset) begin
+
     end
 
 
 //====================================================================
-// Instruction decode stage
+// Instruction Decode Stage
 //====================================================================
 
 decoder decoder(
@@ -85,21 +81,6 @@ decoder decoder(
     .rf_wen(reg_write_en),
     .op2(op2),
     .wb_sel(wb_sel)
-);
-
-ALU ALU (
-    .alu_fn(fn),
-    .rs1_data(rs1_data),
-    .rs2_data(rs2_data),
-    .out(alu_out)
-);
-
-jump_controller jump_controller (
-    .exe_fn(fn),
-    .rs1_data(rs1_data),
-    .rs2_data(rs2_data),
-    .jump_flag(jump_flag),
-    .jump_target(jump_target)
 );
 
 reg_decode_reg_file reg_decode_reg_file (
@@ -118,6 +99,39 @@ reg_decode_reg_file reg_decode_reg_file (
     .rs2_data(rs2_data)
 );
 
+// pipeline register
+    always @(posedge clk or posedge reset) begin
+
+    end
+
+//====================================================================
+// Execution Stage
+//====================================================================
+
+ALU ALU (
+    .alu_fn(fn),
+    .rs1_data(rs1_data),
+    .rs2_data(rs2_data),
+    .out(alu_out)
+);
+
+jump_controller jump_controller (
+    .exe_fn(fn),
+    .rs1_data(rs1_data),
+    .rs2_data(rs2_data),
+    .jump_flag(jump_flag),
+    .jump_target(jump_target)
+);
+
+// pipeline register
+    always @(posedge clk or posedge reset) begin
+
+    end
+
+//====================================================================
+// Memory Access Stage
+//====================================================================
+
 data_mem data_mem (
     .clk(clk),
     .write_en(mem_write_en_buf),
@@ -131,5 +145,13 @@ inst_mem inst_mem (
     .addr(pc),
     .read_data(inst_out)
 );
+// pipeline register
+    always @(posedge clk or posedge reset) begin
+
+    end
+
+//====================================================================
+// Write Back Stage
+//====================================================================
 
 endmodule
