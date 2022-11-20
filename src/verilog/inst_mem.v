@@ -1,5 +1,5 @@
 // memoryモジュール
-module inst_mem (
+module INST_MEM (
     input wire clk,
     input wire [31:0] addr,
     output reg [31:0] read_data

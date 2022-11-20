@@ -1,3 +1,4 @@
+`include "define.vh"
 module CPU (
     input wire clk, reset
 );
@@ -62,6 +63,8 @@ reg [4:0] mem_wb_rd_addr;
 reg mem_wb_nop_flag;
 //WB
 
+
+
 always @(posedge clk) begin
     // IF
     if (!have_data_hazard) begin
@@ -96,8 +99,6 @@ always @(posedge clk) begin
         id_ex_rf_wen <= `REN_X;
         id_ex_nop_flag <= 1'b1;
     end 
-    
-    
 
     // EX
     ex_mem_pc <= id_ex_pc;
@@ -151,7 +152,7 @@ PC pc_mod (
     .reset(reset), // input
     .stall(have_data_hazard), // input
     .jump_flag(jump_flag), // input
-    .jump_target(jump_target), // input
+    .jump_target(alu_out), // input
     .pc(pc) // output
 );
 

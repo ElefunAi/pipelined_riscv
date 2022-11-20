@@ -4,7 +4,7 @@ module DATA_MEM (
     input wire write_en,
     input wire [31:0] addr,
     input wire [31:0] write_data,
-    output reg [31:0] read_data
+    output wire [31:0] read_data
 );
     // 4byte*4096行=16384byte=16KB
     reg [31:0] rom [0:2**12-1];

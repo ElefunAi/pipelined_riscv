@@ -1,6 +1,6 @@
 /* モジュール名：ALU
  * 役割：ほとんどすべての計算を行う
- * しないこと：ストア・ロード、条件分岐、ジャンプ
+ * しないこと：ストア・ロード、ジャンプ
 */ 
 
 `include "define.vh"
@@ -9,6 +9,7 @@ module ALU (
     input wire [4:0] alu_fn,
     input wire [31:0] rs1_data,
     input wire [31:0] rs2_data,
+    output wire jump_flag,
     output wire [31:0] out
 );
 
@@ -45,6 +46,16 @@ module ALU (
 
     wire [31:0] sltu_out;
     assign sltu_out = (rs1_data < rs2_data) ? 32'b1 : 32'b0;
+
+    // output
+    // 条件分岐
+    assign jump_flag = (fn == `BR_BEQ)&&(rs1_data == rs2_data) ? 1'b1 :
+                       (fn == `BR_BNE)&&(rs1_data != rs2_data) ? 1'b1 :
+                       (fn == `BR_BLT)&&($signed(rs1_data) < $signed(rs2_data)) ? 1'b1 :
+                       (fn == `BR_BGE)&&($signed(rs1_data) >= $signed(rs2_data)) ? 1'b1 :
+                       (fn == `BR_BLTU)&&(rs1_data < rs2_data) ? 1'b1 :
+                       (fn == `BR_BGEU)&&(rs1_data >= rs2_data) ? 1'b1 :
+                       (fn == `ALU_JALR)&&(rs1_data + rs2_data) ? 1'b1 : 1'b0;
 
     assign out = (alu_fn == `ALU_X) ? 32'bx :
                  (alu_fn == `ALU_ADD) ? add_out :

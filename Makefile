@@ -24,10 +24,10 @@ ${CHEX}: ${CBIN}
 	echo '13\n00\n00\n00' > ${CHEX} # NOP命令から始まるように
 	od -An -tx1 -w1 -v ${CBIN} >> ${CHEX}
 ${CBIN}: ${COBJ}
-	riscv32-unknown-elf-objcopy -O binary ${COBJ} ${CBIN}
+	riscv32-unknown-linux-gnu-objcopy -O binary ${COBJ} ${CBIN}
 ${COBJ}: ${CSRC}
-	riscv32-unknown-elf-gcc ${CSRC} -c -march=rv32i -mabi=ilp32 -o ${COBJ}
-	riscv32-unknown-elf-gcc ${CSRC} -S -march=rv32i -mabi=ilp32 -o ${BUILDDIR}/c_debug.asm
+	riscv32-unknown-linux-gnu-gcc ${CSRC} -c -march=rv32i -mabi=ilp32 -o ${COBJ}
+	riscv32-unknown-linux-gnu-gcc ${CSRC} -S -march=rv32i -mabi=ilp32 -o ${BUILDDIR}/c_debug.asm
 
 .PHONY: run
 run: ${OUTFILE}

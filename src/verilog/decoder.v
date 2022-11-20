@@ -3,10 +3,10 @@ module decoder (
     input wire [31:0] inst,
     output wire [31:0] imm,
     output wire [4:0] rs1_addr, rs2_addr, rd_addr,
-    output reg [4:0] exe_fun,
-    output reg mem_wen, rf_wen,
-    output reg [1:0] rs1, wb_sel,
-    output reg [2:0] rs2
+    output wire [4:0] exe_fun,
+    output wire mem_wen, rf_wen,
+    output wire [1:0] rs1, wb_sel,
+    output wire [2:0] rs2
 );
     // 宣言
     // 内部信号
@@ -41,7 +41,7 @@ module decoder (
     assign imm = (opcode == `LUI || opcode == `AUIPC) ? {inst[31:12], 12'd0} : // U-format
                  (opcode == `JAL) ? {{11{inst[31]}},inst[31],inst[19:12],inst[20],inst[30:21],1'd0} : // J-format
                  (opcode == `JALR || opcode == `LW || opcode == `OPIMI) ? {{20{inst[31]}},inst[31],inst[30:25],inst[24:21],inst[20]} : // I-format
-                 (opcode == `BRANCH) ? {{18{inst[31]}},inst[31],inst[7],inst[30:25],inst[11:8],1'd0} : //B-format
+                 (opcode == `BRANCH) ? {{19{inst[31]}},inst[31],inst[7],inst[30:25],inst[11:8],1'd0} : //B-format
                  (opcode == `STORE) ? {{20{inst[31]}},inst[31],inst[30:25],inst[11:8],inst[7]} : 32'd0;// ? S-format : R-format(即値なし)
 
     always @(*) begin

@@ -7,7 +7,7 @@ module REG_FILE (
     input wire [4:0] write_addr,
     input wire [31:0] write_value,
     input wire [4:0] rs1_addr, rs2_addr,
-    output reg [31:0] rs1_data, rs2_data
+    output wire [31:0] rs1_data, rs2_data
 );
 
     reg [31:0] reg_file [0:31];
