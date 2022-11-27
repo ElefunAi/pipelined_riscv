@@ -13,8 +13,6 @@ module decoder (
     wire [6:0] opcode;
     wire [2:0] funct3;
     wire [6:0] funct7;
-    wire [4:0] rs1;
-    wire [4:0] rs2;
     wire [4:0] rd;
 
     // opcodeから命令形式保持(R,I,S,B,U,Jなので、3bitレジスタで保持)
@@ -25,8 +23,6 @@ module decoder (
     assign rd = inst[11:7];
     assign funct3 = inst[14:12];
     assign funct7 = inst[31:25];
-    assign rs1 = inst[19:15];
-    assign rs2 = inst[24:20];
 
     // デコーダが渡すもの
     // exe_fun(演算内容),rs1(第1オペランド),rs2(第2オペランド),mem_wen(メモリenable),
@@ -44,209 +40,92 @@ module decoder (
                  (opcode == `BRANCH) ? {{19{inst[31]}},inst[31],inst[7],inst[30:25],inst[11:8],1'd0} : //B-format
                  (opcode == `STORE) ? {{20{inst[31]}},inst[31],inst[30:25],inst[11:8],inst[7]} : 32'd0;// ? S-format : R-format(即値なし)
 
-    always @(*) begin
+    function [13:0] ports;
+        input [6:0] opcode;
+        input [2:0] funct3;
+        input [6:0] funct7;
         case (opcode)
             `LUI : begin
-                exe_fun = `ALU_ADD;
-                rs1 = `RS1_X;
-                rs2 = `RS2_IMU; 
-                mem_wen = `MEN_X;
-                rf_wen = `REN_S;
-                wb_sel = `WB_ALU;
+                ports = {`ALU_ADD, `RS1_X, `RS2_IMU, `MEN_X, `REN_S, `WB_ALU};
             end
             `AUIPC : begin
-                exe_fun = `ALU_ADD;
-                rs1 = `RS1_PC;
-                rs2 = `RS2_IMU;
-                mem_wen = `MEN_X;
-                rf_wen = `REN_S;
-                wb_sel = `WB_ALU;                
+                ports = {`ALU_ADD, `RS1_PC, `RS2_IMU, `MEN_X, `REN_S, `WB_ALU};
             end
             `JAL : begin
-                exe_fun = `ALU_ADD;
-                rs1 = `RS1_PC;
-                rs2 = `RS2_IMJ; 
-                mem_wen = `MEN_X;
-                rf_wen = `REN_S;
-                wb_sel = `WB_PC;                
+                ports = {`ALU_ADD, `RS1_PC, `RS2_IMJ, `MEN_X, `REN_S, `WB_PC};   
             end
             `JALR : begin
-                exe_fun = `ALU_JALR;
-                rs1 = `RS1_RS1;
-                rs2 = `RS2_IMI; 
-                mem_wen = `MEN_X;
-                rf_wen = `REN_S;
-                wb_sel = `WB_PC;                
+                ports = {`ALU_JALR, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_PC};                 
             end
             `BRANCH : begin
                 case (funct3)
                     3'b000 : begin  //BEQ
-                        exe_fun = `BR_BEQ;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_X;
-                        wb_sel = `WB_X;                        
+                        ports = {`BR_BEQ, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_X, `WB_X};
                     end
                     3'b001 : begin  //BNE
-                        exe_fun = `BR_BNE;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_X;
-                        wb_sel = `WB_X;                        
+                        ports = {`BR_BNE, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_X, `WB_X};
                     end
                     3'b100 : begin  //BLT
-                        exe_fun = `BR_BLT;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_X;
-                        wb_sel = `WB_X;                        
+                        ports = {`BR_BLT, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_X, `WB_X};                       
                     end
                     3'b101 : begin  //BGE
-                        exe_fun = `BR_BGE;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_X;
-                        wb_sel = `WB_X;                        
+                        ports = {`BR_BGE, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_X, `WB_X};                      
                     end
                     3'b110 : begin  //BLTU
-                        exe_fun = `BR_BLTU;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_X;
-                        wb_sel = `WB_X;                        
+                        ports = {`BR_BLTU, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_X, `WB_X};                       
                     end
                     3'b111 : begin  //BGEU
-                        exe_fun = `BR_BGEU;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_X;
-                        wb_sel = `WB_X;                        
+                        ports = {`BR_BGEU, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_X, `WB_X};
                     end
                     default: begin //NOP=>_Xで統一
-                        exe_fun = `ALU_X;
-                        rs1 = `RS1_X;
-                        rs2 = `RS2_X;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_X;
-                        wb_sel = `WB_X;
+                        ports = {`ALU_X, `RS1_X, `RS2_X, `MEN_X, `REN_X, `WB_X};
                     end
                 endcase
             end
             `LW : begin
-                exe_fun = `ALU_ADD;
-                rs1 = `RS1_RS1;
-                rs2 = `RS2_IMI; 
-                mem_wen = `MEN_X;
-                rf_wen = `REN_S;
-                wb_sel = `WB_MEM;                
+                ports = {`ALU_ADD, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_MEM};            
             end
             `STORE : begin
-                exe_fun = `ALU_ADD;
-                rs1 = `RS1_RS1;
-                rs2 = `RS2_IMS; 
-                mem_wen = `MEN_S;
-                rf_wen = `REN_X;
-                wb_sel = `WB_X;                
+                ports = {`ALU_ADD, `RS1_RS1, `RS2_IMS, `MEN_S, `REN_X, `WB_X};                    
             end
             `OPIMI : begin
                 case (funct3)
                     3'b000 : begin  //ADDI
-                        exe_fun = `ALU_ADD;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_IMI;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_ADD, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};                                       
                     end
                     3'b001 : begin  //SLLI
-                        exe_fun = `ALU_SLL;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_IMI;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_SLL, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};                        
                     end
                     3'b010 : begin  //SLTI
-                        exe_fun = `ALU_SLT;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_IMI;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_SLT, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};                 
                     end
                     3'b011 : begin  //SLTIU
-                        exe_fun = `ALU_SLTU;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_IMI;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                             
+                        ports = {`ALU_SLTU, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};
                     end
                     3'b100 : begin  //XORI
-                        exe_fun = `ALU_XOR;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_IMI;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_XOR, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};                      
                     end
                     3'b101 : begin
                         case (funct7)
                             7'b0000000 : begin  //SRLI
-                                exe_fun = `ALU_SRL;
-                                rs1 = `RS1_RS1;
-                                rs2 = `RS2_IMI;
-                                mem_wen = `MEN_X;
-                                rf_wen = `REN_S;
-                                wb_sel = `WB_ALU;                                
+                                ports = {`ALU_SRL, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};                            
                             end
                             7'b0100000 : begin  //SRAI
-                                exe_fun = `ALU_SRA;
-                                rs1 = `RS1_RS1;
-                                rs2 = `RS2_IMI;
-                                mem_wen = `MEN_X;
-                                rf_wen = `REN_S;
-                                wb_sel = `WB_ALU;                                
+                                ports = {`ALU_SRA, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};
                             end
                             default: begin //NOP=>_Xで統一
-                                exe_fun = `ALU_X;
-                                rs1 = `RS1_X;
-                                rs2 = `RS2_X;
-                                mem_wen = `MEN_X;
-                                rf_wen = `REN_X;
-                                wb_sel = `WB_X;
+                                ports = {`ALU_X, `RS1_X, `RS2_X, `MEN_X, `REN_X, `WB_X};
                             end
                         endcase
                     end
                     3'b110 : begin  //ORI
-                        exe_fun = `ALU_OR;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_IMI;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_OR, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};                       
                     end
                     3'b111 : begin  //ANDI
-                        exe_fun = `ALU_AND;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_IMI;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_AND, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};                       
                     end
                     default: begin //NOP=>_Xで統一 
-                        exe_fun = `ALU_X;
-                        rs1 = `RS1_X;
-                        rs2 = `RS2_X;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_X;
-                        wb_sel = `WB_X;
+                        ports = {`ALU_X, `RS1_X, `RS2_X, `MEN_X, `REN_X, `WB_X};
                     end
                 endcase
             end
@@ -255,125 +134,56 @@ module decoder (
                     3'b000 : begin
                         case (funct7)
                             7'b0000000 :  begin  //ADD
-                                exe_fun = `ALU_ADD;
-                                rs1 = `RS1_RS1;
-                                rs2 = `RS2_RS2;
-                                mem_wen = `MEN_X;
-                                rf_wen = `REN_S;
-                                wb_sel = `WB_ALU;
+                                ports = {`ALU_ADD, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};
                             end
                             7'b0100000 :  begin  //SUB
-                                exe_fun = `ALU_SUB;
-                                rs1 = `RS1_RS1;
-                                rs2 = `RS2_RS2;
-                                mem_wen = `MEN_X;
-                                rf_wen = `REN_S;
-                                wb_sel = `WB_ALU;
+                                ports = {`ALU_SUB, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};
                             end
                             default: begin //NOP=>_Xで統一 
-                                exe_fun = `ALU_X;
-                                rs1 = `RS1_X;
-                                rs2 = `RS2_X;
-                                mem_wen = `MEN_X;
-                                rf_wen = `REN_X;
-                                wb_sel = `WB_X;
+                                ports = {`ALU_X, `RS1_X, `RS2_X, `MEN_X, `REN_X, `WB_X};
                             end
                         endcase
                     end
                     3'b001 : begin  //SLL
-                        exe_fun = `ALU_SLL;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_SLL, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};                      
                     end
                     3'b010 : begin  //SLT
-                        exe_fun = `ALU_SLT;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_SLT, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};                                           
                     end
                     3'b011 : begin  //SLTU
-                        exe_fun = `ALU_SLTU;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_SLTU, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};                      
                     end
                     3'b100 : begin  //XOR
-                        exe_fun = `ALU_XOR;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_XOR, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};                                             
                     end
                     3'b101 : begin
                         case (funct7)
                             7'b0000000 :  begin  //SRL
-                                exe_fun = `ALU_SRL;
-                                rs1 = `RS1_RS1;
-                                rs2 = `RS2_RS2;
-                                mem_wen = `MEN_X;
-                                rf_wen = `REN_S;
-                                wb_sel = `WB_ALU; 
+                                ports = {`ALU_SRL, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};
                             end
                             7'b0100000 :  begin  //SRA
-                                exe_fun = `ALU_SRA;
-                                rs1 = `RS1_RS1;
-                                rs2 = `RS2_RS2;
-                                mem_wen = `MEN_X;
-                                rf_wen = `REN_S;
-                                wb_sel = `WB_ALU; 
+                                ports = {`ALU_SRA, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};
                             end
                             default: begin //NOP=>_Xで統一
-                                exe_fun = `ALU_X;
-                                rs1 = `RS1_X;
-                                rs2 = `RS2_X;
-                                mem_wen = `MEN_X;
-                                rf_wen = `REN_X;
-                                wb_sel = `WB_X;
+                                ports = {`ALU_X, `RS1_X, `RS2_X, `MEN_X, `REN_X, `WB_X};
                             end
                         endcase
                     end
                     3'b110 : begin  //OR
-                        exe_fun = `ALU_OR;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_OR, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};                      
                     end
                     3'b111 : begin  //AND
-                        exe_fun = `ALU_AND;
-                        rs1 = `RS1_RS1;
-                        rs2 = `RS2_RS2;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_S;
-                        wb_sel = `WB_ALU;                        
+                        ports = {`ALU_AND, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_ALU};                   
                     end
                     default: begin //NOP=>_Xで統一 
-                        exe_fun = `ALU_X;
-                        rs1 = `RS1_X;
-                        rs2 = `RS2_X;
-                        mem_wen = `MEN_X;
-                        rf_wen = `REN_X;
-                        wb_sel = `WB_X;
+                        ports = {`ALU_X, `RS1_X, `RS2_X, `MEN_X, `REN_X, `WB_X};
                     end
                 endcase
             end
             default: begin //NOP=>_Xで統一 
-                exe_fun = `ALU_X;
-                rs1 = `RS1_X;
-                rs2 = `RS2_X;
-                mem_wen = `MEN_X;
-                rf_wen = `REN_X;
-                wb_sel = `WB_X;
+                ports = {`ALU_X, `RS1_X, `RS2_X, `MEN_X, `REN_X, `WB_X};
             end
-        endcase
-    end
+        endcase        
+    endfunction
+    assign {exe_fun, rs1, rs2, mem_wen, rf_wen, wb_sel} = ports(opcode, funct3, funct7);
 endmodule

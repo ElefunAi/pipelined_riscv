@@ -8,7 +8,7 @@ module INST_MEM (
     reg [7:0] rom [0:16383];
 
     initial begin
-        $readmemh("./src/hex/test1.hex", rom);
+        $readmemh("build/c_sample.hex", rom);
     end
     
     always @(posedge clk) begin
