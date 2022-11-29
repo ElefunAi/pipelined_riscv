@@ -49,13 +49,13 @@ module ALU (
 
     // output
     // 条件分岐
-    assign jump_flag = (fn == `BR_BEQ)&&(rs1_data == rs2_data) ? 1'b1 :
-                       (fn == `BR_BNE)&&(rs1_data != rs2_data) ? 1'b1 :
-                       (fn == `BR_BLT)&&($signed(rs1_data) < $signed(rs2_data)) ? 1'b1 :
-                       (fn == `BR_BGE)&&($signed(rs1_data) >= $signed(rs2_data)) ? 1'b1 :
-                       (fn == `BR_BLTU)&&(rs1_data < rs2_data) ? 1'b1 :
-                       (fn == `BR_BGEU)&&(rs1_data >= rs2_data) ? 1'b1 :
-                       (fn == `ALU_JALR)&&(rs1_data + rs2_data) ? 1'b1 : 1'b0;
+    assign jump_flag = (alu_fn == `BR_BEQ)&&(rs1_data == rs2_data) ? 1'b1 :
+                       (alu_fn == `BR_BNE)&&(rs1_data != rs2_data) ? 1'b1 :
+                       (alu_fn == `BR_BLT)&&($signed(rs1_data) < $signed(rs2_data)) ? 1'b1 :
+                       (alu_fn == `BR_BGE)&&($signed(rs1_data) >= $signed(rs2_data)) ? 1'b1 :
+                       (alu_fn == `BR_BLTU)&&(rs1_data < rs2_data) ? 1'b1 :
+                       (alu_fn == `BR_BGEU)&&(rs1_data >= rs2_data) ? 1'b1 :
+                       (alu_fn == `ALU_JALR)&&(rs1_data + rs2_data) ? 1'b1 : 1'b0;
 
     assign out = (alu_fn == `ALU_X) ? 32'bx :
                  (alu_fn == `ALU_ADD) ? add_out :

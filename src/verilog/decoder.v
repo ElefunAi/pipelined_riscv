@@ -1,5 +1,5 @@
 `include "define.vh"
-module decoder (
+module DECODER (
     input wire [31:0] inst,
     output wire [31:0] imm,
     output wire [4:0] rs1_addr, rs2_addr, rd_addr,

@@ -13,6 +13,10 @@ module REG_FILE (
     reg [31:0] reg_file [0:31];
 
     always @(posedge clk) begin
+        if (reset) begin
+            // zero register
+            reg_file[0] <= 32'b0;
+        end
         if (write_en) begin
             reg_file[write_addr] <= write_value;
         end

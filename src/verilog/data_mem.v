@@ -18,16 +18,4 @@ module DATA_MEM (
     end
 
     assign read_data = read_reg;
-    // reg [31:0] rom [0:4095];
-    
-    // always @(posedge clk) begin
-    //     // 書き込んでいないメモリにアクセスすることは想定しない。<=手間かからないのになぜ？
-    //     if (write_en) begin
-    //         rom[addr] <= write_data;
-    //     end
-    // end
-
-    // これだと書き込み結果が即反映されるので違和感がある
-    // 読み出し結果が変わるのは次に参照した時では？
-    // assign read_data = rom[addr];
 endmodule
