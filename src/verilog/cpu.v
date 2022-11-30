@@ -14,7 +14,7 @@ wire [31:0] imm;
 wire [4:0]  rs1_addr, rs2_addr;
 wire [31:0] rs1_data, rs2_data;
 wire [4:0] fn;
-wire [4:0]write_addr;
+wire [4:0] write_addr;
 wire [1:0] rs1;
 wire [2:0] rs2;
 wire [1:0] wb_sel;
@@ -70,7 +70,7 @@ end
 // 出力reg
 DECODER decoder(
     // input
-    .inst(inst_out),
+    .inst(if_inst_out),
     // output
     .imm(imm),            
     .rs1_addr(rs1_addr),  
