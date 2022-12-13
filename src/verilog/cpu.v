@@ -16,7 +16,7 @@ wire [31:0] rs1_data, rs2_data;
 wire [4:0] fn;
 wire [4:0] write_addr;
 wire [1:0] rs1;
-wire [2:0] rs2;
+wire [1:0] rs2;
 wire [1:0] wb_sel;
 wire mem_wen, rf_wen;
 
@@ -85,9 +85,8 @@ DECODER decoder(
 );
 
 wire [31:0] wb_write_value;
-assign wb_write_value = (wb_wb_sel == `WB_ALU) ? wb_alu_out :
-                        (wb_wb_sel == `WB_MEM) ? wb_mem_out :
-                        (wb_wb_sel == `WB_PC)  ? if_pc      : 32'd0 ;
+assign wb_write_value = (wb_wb_sel == `WB_MEM) ? wb_mem_out    :
+                        (wb_wb_sel == `WB_PC)  ? if_pc + 32'd4 : 32'd0 ;
 
 REG_FILE reg_file (
     // input
@@ -105,9 +104,10 @@ REG_FILE reg_file (
 
 // ALUでタイミングを合わせるのはdecoderからの値と、レジスタファイルからの読み出し
 // pipeline register
-reg [31:0] id_rs1_data, id_rs2_data;
+reg [31:0] id_rs1_data, id_rs2_data, id_imm, id_pc;
 reg [4:0] id_fn, id_write_addr;
 reg [2:0] id_wb_sel;
+reg [1:0] id_rs1, id_rs2;
 reg id_mem_wen, id_rf_wen;
     always @(posedge clk or posedge reset) begin
         if (!reset) begin
@@ -118,6 +118,10 @@ reg id_mem_wen, id_rf_wen;
             id_rf_wen <= rf_wen;
             id_rs1_data <= rs1_data;
             id_rs2_data <= rs2_data; 
+            id_imm  <= imm;
+            id_rs1  <= rs1;
+            id_rs2  <= rs2;
+            id_pc   <= if_pc;
         end
         else if (reset) begin
             id_write_addr <= 5'd0;
@@ -126,7 +130,11 @@ reg id_mem_wen, id_rf_wen;
             id_mem_wen <= 1'd0;
             id_rf_wen  <= 1'd0;
             id_rs1_data <= 32'd0;
-            id_rs2_data <= 32'd0; 
+            id_rs2_data <= 32'd0;
+            id_imm <= 32'd0;
+            id_rs1  <= 2'd0;
+            id_rs2  <= 2'd0;
+            id_pc   <= 32'd0;
         end
     end
 
@@ -134,11 +142,22 @@ reg id_mem_wen, id_rf_wen;
 // Execution Stage
 //====================================================================
 
+// rs1_dataはPCかreg_fileの出力かを選択
+// rs2_dataはIMM,reg_fileの出力かを選択
+wire [31:0] alu_rs1;
+wire [31:0] alu_rs2;
+assign alu_rs1 =  (id_rs1 == `RS1_X)   ? 32'b0       :
+                  (id_rs1 == `RS1_RS1) ? id_rs1_data :
+                  (id_rs1 == `RS1_PC)  ? id_pc       : 32'bx;
+assign alu_rs2 =  (id_rs2 == `RS2_X)   ? 32'b0       :
+                  (id_rs2 == `RS2_RS2) ? id_rs2_data :
+                  (id_rs2 == `RS2_IMI) ? id_imm      : 32'bx;
+
 ALU ALU (
     // input
     .alu_fn(id_fn),
-    .rs1_data(id_rs1_data),
-    .rs2_data(id_rs2_data),
+    .rs1_data(alu_rs1),
+    .rs2_data(alu_rs2),
     // output
     .jump_flag(jump_flag),
     .out(alu_out)

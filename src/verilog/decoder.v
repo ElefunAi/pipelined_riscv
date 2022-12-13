@@ -5,8 +5,7 @@ module DECODER (
     output wire [4:0] rs1_addr, rs2_addr, rd_addr,
     output wire [4:0] exe_fun,
     output wire mem_wen, rf_wen,
-    output wire [1:0] rs1, wb_sel,
-    output wire [2:0] rs2
+    output wire [1:0] rs1, rs2, wb_sel
 );
     // 宣言
     // 内部信号
@@ -46,13 +45,13 @@ module DECODER (
         input [6:0] funct7;
         case (opcode)
             `LUI : begin
-                ports = {`ALU_ADD, `RS1_X, `RS2_IMU, `MEN_X, `REN_S, `WB_ALU};
+                ports = {`ALU_ADD, `RS1_X, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};
             end
             `AUIPC : begin
-                ports = {`ALU_ADD, `RS1_PC, `RS2_IMU, `MEN_X, `REN_S, `WB_ALU};
+                ports = {`ALU_ADD, `RS1_PC, `RS2_IMI, `MEN_X, `REN_S, `WB_ALU};
             end
             `JAL : begin
-                ports = {`ALU_ADD, `RS1_PC, `RS2_IMJ, `MEN_X, `REN_S, `WB_PC};   
+                ports = {`ALU_ADD, `RS1_PC, `RS2_IMI, `MEN_X, `REN_S, `WB_PC};   
             end
             `JALR : begin
                 ports = {`ALU_JALR, `RS1_RS1, `RS2_IMI, `MEN_X, `REN_S, `WB_PC};                 
@@ -86,7 +85,7 @@ module DECODER (
                 ports = {`ALU_ADD, `RS1_RS1, `RS2_RS2, `MEN_X, `REN_S, `WB_MEM};            
             end
             `STORE : begin
-                ports = {`ALU_ADD, `RS1_RS1, `RS2_IMS, `MEN_S, `REN_X, `WB_X};                    
+                ports = {`ALU_ADD, `RS1_RS1, `RS2_IMI, `MEN_S, `REN_X, `WB_X};                    
             end
             `OPIMI : begin
                 case (funct3)
