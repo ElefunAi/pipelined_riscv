@@ -59,3 +59,6 @@
 `define WB_ALU    2'd1
 `define WB_MEM    2'd2
 `define WB_PC     2'd3
+
+// bubble
+`define BUBBLE    32'h13

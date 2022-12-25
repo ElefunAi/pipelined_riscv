@@ -14,7 +14,8 @@ module cpu_tb;
         #HALFCYCLE clk = ~clk;
         #HALFCYCLE clk = ~clk;
         //$display("alu_out = %d, memout= %d, addr = %d, en = %d,%d. data=%d, rs2_data = %d, hazard = %D", cpu.alu_out, cpu.data_mem.read_data, cpu.data_mem.addr, cpu.mem_wen, cpu.data_mem.write_en, cpu.data_mem.write_data, cpu.rs2_data, cpu.have_data_hazard);
-        $display("pc = %d, cpu.imm=%b, rs1_data=%d, rs2_data=%d, write_val=%d, write_addr=%d", cpu.pc, cpu.if_inst_out, cpu.alu_rs2, cpu.alu_rs2, cpu.wb_write_value, cpu.write_addr);
+        // $display("pc = %d, cpu.inst=%b, exe_fun=%b, rs1_data=%d, rs2_data=%d, alu_out=%d", cpu.pc, cpu.decoder.opcode, cpu.decoder.exe_fun, cpu.rs1_data, cpu.alu_rs2,  cpu.alu_out);
+        $display();
     end
 
     initial begin

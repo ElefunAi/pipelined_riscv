@@ -6,7 +6,7 @@ BUILDDIR := build
 $(shell mkdir -p ${BUILDDIR})
 
 CSRCDIR := ./src/c
-CSRC := ${CSRCDIR}/c_sample.c # 単体ファイルしか対応していない  # 状況に応じて要変更
+CSRC := ${CSRCDIR}/br_hazard.c # 単体ファイルしか対応していない  # 状況に応じて要変更
 COBJ := ${CSRC:${CSRCDIR}/%.c=${BUILDDIR}/%.o}
 CBIN := ${COBJ:%.o=%.bin}
 CHEX := ${COBJ:%.o=%.hex}

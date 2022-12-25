@@ -6,6 +6,7 @@ module CPU(
 
 // IF stage
 wire jump_flag;
+wire br_flag;
 wire [31:0] pc;
 wire [31:0] inst_out;
 
@@ -27,17 +28,21 @@ wire [31:0] alu_out;
 wire [31:0] mem_out;
 
 // stallの制御
-
+wire stall_flg;
+// assign stall_flg = ;
 //====================================================================
 // Instruction Fetch Stage
 //====================================================================
 
+//  ジャンプ先への更新はジャンプ先命令が発行されるタイミングと合わせる
+wire exe_br_flag,exe_jump_flag;
+// program counterはbranchとjumpフラグで変化
 PC pc_mod (
     // input
     .clk(clk),
     .reset(reset),
-    .jump_flag(jump_flag),
-    .jump_target(alu_out),
+    .jump_flag(exe_br_flag || exe_jump_flag),
+    .jump_target(exe_alu_out),
     // out
     .pc(pc)
 );
@@ -55,7 +60,7 @@ reg [31:0] if_pc, if_inst_out;
 always @(posedge clk or posedge reset) begin
         if (!reset) begin
             if_pc <= pc;
-            if_inst_out <= inst_out;
+            if_inst_out <= (exe_br_flag || exe_jump_flag) ? `BUBBLE : inst_out; // 命令ハザード
         end
         else if (reset) begin
             if_pc <= 32'b0;
@@ -66,11 +71,12 @@ end
 //====================================================================
 // Instruction Decode Stage
 //====================================================================
-
+wire [31:0] id_inst;
+assign id_inst = (exe_br_flag || exe_jump_flag) ? `BUBBLE : if_inst_out;
 // 出力reg
 DECODER decoder(
     // input
-    .inst(if_inst_out),
+    .inst(id_inst),
     // output
     .imm(imm),            
     .rs1_addr(rs1_addr),  
@@ -156,12 +162,17 @@ assign alu_rs2 =  (id_rs2 == `RS2_X)   ? 32'b0       :
 ALU ALU (
     // input
     .alu_fn(id_fn),
+    .wb_sel(id_wb_sel),
     .rs1_data(alu_rs1),
     .rs2_data(alu_rs2),
     // output
+    .br_flag(br_flag),
     .jump_flag(jump_flag),
     .out(alu_out)
 );
+// br_flag
+assign exe_jump_flag = jump_flag;
+assign exe_br_flag = br_flag;
 
 // pipeline register
 reg [31:0] exe_alu_out, exe_rs1_data, exe_rs2_data;

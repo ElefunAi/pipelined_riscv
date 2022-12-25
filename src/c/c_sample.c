@@ -1,7 +1,9 @@
+#include <stdio.h>
+
 int main() {
-    int a = 10;
-    int b = 8;
-    int c;
-    c = a + b;
+    const unsigned int a = 10;
+    const unsigned int b = 8;
+    unsigned int c;
+    c = 10 + b;
     return c;
 } 

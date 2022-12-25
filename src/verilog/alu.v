@@ -7,8 +7,10 @@
 
 module ALU (
     input wire [4:0] alu_fn,
+    input wire [2:0] wb_sel,
     input wire [31:0] rs1_data,
     input wire [31:0] rs2_data,
+    output wire br_flag,
     output wire jump_flag,
     output wire [31:0] out
 );
@@ -49,13 +51,14 @@ module ALU (
 
     // output
     // 条件分岐
-    assign jump_flag = (alu_fn == `BR_BEQ)&&(rs1_data == rs2_data) ? 1'b1 :
+    assign br_flag = (alu_fn == `BR_BEQ)&&(rs1_data == rs2_data) ? 1'b1 :
                        (alu_fn == `BR_BNE)&&(rs1_data != rs2_data) ? 1'b1 :
                        (alu_fn == `BR_BLT)&&($signed(rs1_data) < $signed(rs2_data)) ? 1'b1 :
                        (alu_fn == `BR_BGE)&&($signed(rs1_data) >= $signed(rs2_data)) ? 1'b1 :
                        (alu_fn == `BR_BLTU)&&(rs1_data < rs2_data) ? 1'b1 :
-                       (alu_fn == `BR_BGEU)&&(rs1_data >= rs2_data) ? 1'b1 :
-                       (alu_fn == `ALU_JALR)&&(rs1_data + rs2_data) ? 1'b1 : 1'b0;
+                       (alu_fn == `BR_BGEU)&&(rs1_data >= rs2_data) ? 1'b1 : 1'b0;
+
+    assign jump_flag = (wb_sel == `WB_PC);
 
     assign out = (alu_fn == `ALU_X) ? 32'bx :
                  (alu_fn == `ALU_ADD) ? add_out :

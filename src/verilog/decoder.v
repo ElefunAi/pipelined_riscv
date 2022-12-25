@@ -5,7 +5,8 @@ module DECODER (
     output wire [4:0] rs1_addr, rs2_addr, rd_addr,
     output wire [4:0] exe_fun,
     output wire mem_wen, rf_wen,
-    output wire [1:0] rs1, rs2, wb_sel
+    output wire [1:0] rs1, wb_sel,
+    output wire [2:0] rs2
 );
     // 宣言
     // 内部信号
@@ -182,7 +183,9 @@ module DECODER (
             default: begin //NOP=>_Xで統一 
                 ports = {`ALU_X, `RS1_X, `RS2_X, `MEN_X, `REN_X, `WB_X};
             end
-        endcase        
+        endcase       
     endfunction
+    wire [13:0] probe;
+    assign probe = ports(opcode, funct3, funct7);
     assign {exe_fun, rs1, rs2, mem_wen, rf_wen, wb_sel} = ports(opcode, funct3, funct7);
 endmodule
