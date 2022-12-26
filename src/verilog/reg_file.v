@@ -17,7 +17,7 @@ module REG_FILE (
             // zero register
             reg_file[0] <= 32'b0;
         end
-        if (write_en) begin
+        else if (write_en) begin
             reg_file[write_addr] <= write_value;
         end
     end

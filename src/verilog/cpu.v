@@ -17,7 +17,7 @@ wire [31:0] rs1_data, rs2_data;
 wire [4:0] fn;
 wire [4:0] write_addr;
 wire [1:0] rs1;
-wire [1:0] rs2;
+wire [2:0] rs2;
 wire [1:0] wb_sel;
 wire mem_wen, rf_wen;
 
@@ -42,7 +42,7 @@ PC pc_mod (
     .clk(clk),
     .reset(reset),
     .jump_flag(exe_br_flag || exe_jump_flag),
-    .jump_target(exe_alu_out),
+    .jump_target(alu_out),
     // out
     .pc(pc)
 );
@@ -91,8 +91,9 @@ DECODER decoder(
 );
 
 wire [31:0] wb_write_value;
-assign wb_write_value = (wb_wb_sel == `WB_MEM) ? wb_mem_out    :
-                        (wb_wb_sel == `WB_PC)  ? if_pc + 32'd4 : 32'd0 ;
+assign wb_write_value = (wb_wb_sel == `WB_ALU) ? wb_alu_out    :
+                        (wb_wb_sel == `WB_MEM) ? wb_mem_out    :
+                        (wb_wb_sel == `WB_PC)  ? wb_pc + 32'd4 : 32'd0 ;
 
 REG_FILE reg_file (
     // input
@@ -112,8 +113,8 @@ REG_FILE reg_file (
 // pipeline register
 reg [31:0] id_rs1_data, id_rs2_data, id_imm, id_pc;
 reg [4:0] id_fn, id_write_addr;
-reg [2:0] id_wb_sel;
-reg [1:0] id_rs1, id_rs2;
+reg [2:0] id_wb_sel, id_rs2;
+reg [1:0] id_rs1;
 reg id_mem_wen, id_rf_wen;
     always @(posedge clk or posedge reset) begin
         if (!reset) begin
@@ -175,7 +176,7 @@ assign exe_jump_flag = jump_flag;
 assign exe_br_flag = br_flag;
 
 // pipeline register
-reg [31:0] exe_alu_out, exe_rs1_data, exe_rs2_data;
+reg [31:0] exe_alu_out, exe_rs1_data, exe_rs2_data, exe_pc;
 reg [4:0] exe_write_addr;
 reg [1:0] exe_wb_sel;
 reg exe_mem_wen, exe_rf_wen;
@@ -188,6 +189,7 @@ reg exe_mem_wen, exe_rf_wen;
             exe_alu_out <= alu_out;
             exe_rs1_data <= id_rs1_data;
             exe_rs2_data <= id_rs2_data;
+            exe_pc <= id_pc;
         end
         else if (reset) begin
             exe_mem_wen <= 1'd0;
@@ -197,6 +199,7 @@ reg exe_mem_wen, exe_rf_wen;
             exe_alu_out <= 32'd0; 
             exe_rs1_data <= id_rs1_data;
             exe_rs2_data <= id_rs2_data;
+            exe_pc <= 32'd0;
         end
     end
 
@@ -220,7 +223,7 @@ DATA_MEM data_mem (
 //====================================================================
 
 // pipeline register
-reg [31:0] wb_mem_out, wb_alu_out;
+reg [31:0] wb_mem_out, wb_alu_out, wb_pc;
 reg [4:0] wb_write_addr;
 reg [1:0] wb_wb_sel;
 reg wb_rf_wen;
@@ -230,6 +233,7 @@ reg wb_rf_wen;
         wb_write_addr <= exe_write_addr;
         wb_wb_sel  <= exe_wb_sel;
         wb_rf_wen  <= exe_rf_wen;
+        wb_pc <= exe_pc;
     end
 
 endmodule
