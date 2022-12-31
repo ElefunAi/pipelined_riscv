@@ -64,6 +64,7 @@ INST_MEM inst_mem (
 
 // pipeline register
 reg [31:0] if_pc, if_inst_out;
+
 always @(posedge clk or posedge reset) begin
         if (!reset) begin
             if_pc <= (stall_flg) ? if_pc : pc;
@@ -80,12 +81,12 @@ end
 // Instruction Decode Stage
 //====================================================================
 // stall用前処理
-wire [4:0] rs1_addr_b, rs2_addr_b;
-assign rs1_addr_b = id_inst[19:15];
-assign rs2_addr_b = id_inst[24:20];
-
 wire [31:0] id_inst;
-assign id_inst = (exe_br_flag || exe_jump_flag || 1'b0) ? `BUBBLE : if_inst_out;
+assign id_inst = (exe_br_flag || exe_jump_flag || stall_flg ) ? `BUBBLE : if_inst_out;
+
+wire [4:0] rs1_addr_b, rs2_addr_b;
+assign rs1_addr_b = if_inst_out[19:15];
+assign rs2_addr_b = if_inst_out[24:20];
 
 // 出力reg
 DECODER decoder(
