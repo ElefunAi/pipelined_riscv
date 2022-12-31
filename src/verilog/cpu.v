@@ -21,15 +21,21 @@ wire [2:0] rs2;
 wire [1:0] wb_sel;
 wire mem_wen, rf_wen;
 
+// stall用
+wire stall_flg;
+wire id_rs1_data_hazard, id_rs2_data_hazard;
+assign id_rs1_data_hazard = (((id_rf_wen == `REN_S) && (5'b0 !== rs1_addr_b) && (id_write_addr == rs1_addr_b)) ? 1'b1 : 1'b0);
+assign id_rs2_data_hazard = (((id_rf_wen == `REN_S) && (5'b0 !== rs2_addr_b) && (id_write_addr == rs2_addr_b)) ? 1'b1 : 1'b0);
+// assign stall_flg = 1'b0;
+assign stall_flg = (id_rs1_data_hazard || id_rs2_data_hazard) ? 1'b1 : 1'b0;
+
 // EXE stage
 wire [31:0] alu_out;
 
 // MEM stage
 wire [31:0] mem_out;
 
-// stallの制御
-wire stall_flg;
-// assign stall_flg = ;
+
 //====================================================================
 // Instruction Fetch Stage
 //====================================================================
@@ -41,6 +47,7 @@ PC pc_mod (
     // input
     .clk(clk),
     .reset(reset),
+    .stall_flag(stall_flg),
     .jump_flag(exe_br_flag || exe_jump_flag),
     .jump_target(alu_out),
     // out
@@ -59,8 +66,9 @@ INST_MEM inst_mem (
 reg [31:0] if_pc, if_inst_out;
 always @(posedge clk or posedge reset) begin
         if (!reset) begin
-            if_pc <= pc;
-            if_inst_out <= (exe_br_flag || exe_jump_flag) ? `BUBBLE : inst_out; // 命令ハザード
+            if_pc <= (stall_flg) ? if_pc : pc;
+            if_inst_out <= (exe_br_flag || exe_jump_flag) ? `BUBBLE :
+                           (stall_flg) ? if_inst_out : inst_out; // 命令ハザード処理
         end
         else if (reset) begin
             if_pc <= 32'b0;
@@ -71,8 +79,14 @@ end
 //====================================================================
 // Instruction Decode Stage
 //====================================================================
+// stall用前処理
+wire [4:0] rs1_addr_b, rs2_addr_b;
+assign rs1_addr_b = id_inst[19:15];
+assign rs2_addr_b = id_inst[24:20];
+
 wire [31:0] id_inst;
-assign id_inst = (exe_br_flag || exe_jump_flag) ? `BUBBLE : if_inst_out;
+assign id_inst = (exe_br_flag || exe_jump_flag || 1'b0) ? `BUBBLE : if_inst_out;
+
 // 出力reg
 DECODER decoder(
     // input
@@ -90,25 +104,30 @@ DECODER decoder(
     .wb_sel(wb_sel)    
 );
 
-wire [31:0] wb_write_value;
-assign wb_write_value = (wb_wb_sel == `WB_ALU) ? wb_alu_out    :
-                        (wb_wb_sel == `WB_MEM) ? wb_mem_out    :
-                        (wb_wb_sel == `WB_PC)  ? wb_pc + 32'd4 : 32'd0 ;
-
 REG_FILE reg_file (
     // input
     .clk(clk),      
     .reset(reset),  
     .rs1_addr(rs1_addr), 
     .rs2_addr(rs2_addr), 
-    .write_en(wb_rf_wen),       
-    .write_addr(wb_write_addr),   
-    .write_value(wb_write_value), 
+    .write_en(mem_rf_wen),       
+    .write_addr(mem_write_addr),   
+    .write_value(mem_write_value), 
     // output
     .rs1_data(rs1_data),    
     .rs2_data(rs2_data)     
 );
 
+// forwarding用
+wire [31:0] fw_rs1_data, fw_rs2_data;
+                     // forwarding from MEM
+assign fw_rs1_data = (rs1_addr == exe_write_addr && exe_rf_wen == `REN_S) ? write_value : 
+                      // forwarding from WB
+                     (rs1_addr == mem_write_addr && mem_rf_wen == `REN_S) ? mem_write_value : rs1_data;
+assign fw_rs2_data = (rs2_addr == exe_write_addr && exe_rf_wen == `REN_S) ? write_value : 
+                     (rs2_addr == mem_write_addr && mem_rf_wen == `REN_S) ? mem_write_value : rs2_data;
+
+// data forwarding id_rs1_data,id_rs2_data 
 // ALUでタイミングを合わせるのはdecoderからの値と、レジスタファイルからの読み出し
 // pipeline register
 reg [31:0] id_rs1_data, id_rs2_data, id_imm, id_pc;
@@ -123,12 +142,12 @@ reg id_mem_wen, id_rf_wen;
             id_wb_sel <= wb_sel;
             id_mem_wen<= mem_wen;
             id_rf_wen <= rf_wen;
-            id_rs1_data <= rs1_data;
-            id_rs2_data <= rs2_data; 
             id_imm  <= imm;
             id_rs1  <= rs1;
             id_rs2  <= rs2;
             id_pc   <= if_pc;
+            id_rs1_data <= fw_rs1_data;
+            id_rs2_data <= fw_rs2_data;
         end
         else if (reset) begin
             id_write_addr <= 5'd0;
@@ -136,12 +155,12 @@ reg id_mem_wen, id_rf_wen;
             id_wb_sel  <= 2'd0;
             id_mem_wen <= 1'd0;
             id_rf_wen  <= 1'd0;
-            id_rs1_data <= 32'd0;
-            id_rs2_data <= 32'd0;
             id_imm <= 32'd0;
             id_rs1  <= 2'd0;
             id_rs2  <= 2'd0;
             id_pc   <= 32'd0;
+            id_rs1_data <= 32'd0;
+            id_rs2_data <= 32'd0;
         end
     end
 
@@ -197,8 +216,8 @@ reg exe_mem_wen, exe_rf_wen;
             exe_wb_sel  <= 2'd0;
             exe_write_addr <= 5'd0;
             exe_alu_out <= 32'd0; 
-            exe_rs1_data <= id_rs1_data;
-            exe_rs2_data <= id_rs2_data;
+            exe_rs1_data <= 32'd0;
+            exe_rs2_data <= 32'd0;
             exe_pc <= 32'd0;
         end
     end
@@ -217,23 +236,26 @@ DATA_MEM data_mem (
     .read_data(mem_out)
 );
 
+wire [31:0] write_value;
+assign write_value = (exe_wb_sel == `WB_ALU) ? exe_alu_out    :
+                     (exe_wb_sel == `WB_MEM) ? mem_out    :
+                     (exe_wb_sel == `WB_PC)  ? exe_pc + 32'd4 : 32'd0 ;
+
+//  pipeline register
+reg [31:0] mem_write_value;
+reg [4:0]  mem_write_addr;
+reg mem_rf_wen;
+    always @(posedge clk) begin
+        mem_write_value <= write_value;
+        mem_write_addr  <= exe_write_addr;
+        mem_rf_wen  <= exe_rf_wen;
+    end
 
 //====================================================================
 // Write Back Stage
 //====================================================================
 
-// pipeline register
-reg [31:0] wb_mem_out, wb_alu_out, wb_pc;
-reg [4:0] wb_write_addr;
-reg [1:0] wb_wb_sel;
-reg wb_rf_wen;
-    always @(posedge clk) begin
-        wb_alu_out <= exe_alu_out;
-        wb_mem_out <= mem_out;
-        wb_write_addr <= exe_write_addr;
-        wb_wb_sel  <= exe_wb_sel;
-        wb_rf_wen  <= exe_rf_wen;
-        wb_pc <= exe_pc;
-    end
+// WB2reg_file
+// ID stageのreg_fileへ書き戻し
 
 endmodule

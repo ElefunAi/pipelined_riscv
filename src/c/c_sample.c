@@ -1,9 +1,12 @@
-#include <stdio.h>
-
 int main() {
-    const unsigned int a = 10;
-    const unsigned int b = 8;
-    unsigned int c;
-    c = 10 + b;
+    int a = 200;
+    int b = 2000;
+    if (a == 100) {
+        b = 500;
+    } else {
+        a = 300;
+    }
+
+    int c = a + b;
     return c;
 } 
