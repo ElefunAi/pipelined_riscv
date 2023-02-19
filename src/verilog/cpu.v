@@ -54,7 +54,7 @@ PC pc_mod (
     .pc(pc)
 );
 
-INST_MEM inst_mem (
+MEM inst_MEM (
     // input
     .clk(clk),
     .addr(pc),
@@ -227,7 +227,7 @@ reg exe_mem_wen, exe_rf_wen;
 // Memory Access Stage
 //====================================================================
 
-DATA_MEM data_mem (
+MEM data_MEM (
     // input
     .clk(clk),
     .write_en(exe_mem_wen),
